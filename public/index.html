@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two Truths & One Lie</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #e94560;
+      --accent2: #f5a623;
+      --accent3: #00d2d3;
+      --text: #eaeaea;
+      --text-dim: #8888aa;
+      --border: #2a2a4a;
+      --green: #2ecc71;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== LAYOUT ===== */
+    .screen { display: none; min-height: 100vh; padding: 20px; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    .center { align-items: center; justify-content: center; text-align: center; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; }
+    h2 { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 700; }
+    h3 { font-size: 1.1rem; font-weight: 600; }
+    .dim { color: var(--text-dim); }
+    .accent { color: var(--accent); }
+    .accent2 { color: var(--accent2); }
+    .accent3 { color: var(--accent3); }
+    .green { color: var(--green); }
+
+    /* ===== BUTTONS ===== */
+    btn, .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .btn { display: inline-block; }
+    button.btn-primary, .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    button.btn-primary:hover { background: #c73652; transform: translateY(-1px); }
+    button.btn-secondary, .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.btn-secondary:hover { background: var(--border); }
+    button.btn-success, .btn-success {
+      background: var(--green);
+      color: #fff;
+    }
+    button.btn-warning, .btn-warning {
+      background: var(--accent2);
+      color: #111;
+    }
+    button.btn-info, .btn-info {
+      background: var(--accent3);
+      color: #111;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .btn-full { width: 100%; margin-bottom: 10px; }
+
+    /* ===== INPUTS ===== */
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+
+    /* ===== PILL BADGE ===== */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-voting { background: #1a3a1a; color: var(--green); }
+    .badge-closed { background: #3a1a1a; color: var(--accent); }
+    .badge-lobby { background: #1a1a3a; color: var(--accent3); }
+    .badge-reveal { background: #3a2a0a; color: var(--accent2); }
+
+    /* ===== STATEMENT CARDS ===== */
+    .statement-card {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .statement-card:hover { border-color: var(--accent3); }
+    .statement-card.selected { border-color: var(--accent); background: #1f0a12; }
+    .statement-card.is-lie { border-color: var(--accent); background: #2a0a0a; }
+    .statement-card.is-truth { border-color: var(--green); background: #0a1f0a; }
+    .statement-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      color: var(--text-dim);
+    }
+    .statement-text { font-size: 1rem; line-height: 1.5; }
+
+    /* ===== NAME GRID ===== */
+    .name-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .name-btn {
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .name-btn:hover { border-color: var(--accent3); }
+    .name-btn.selected { border-color: var(--accent); background: #1f0a12; color: var(--accent); font-weight: 700; }
+
+    /* ===== VOTE BAR ===== */
+    .vote-bar-wrap { margin: 6px 0 14px; }
+    .vote-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+    .vote-bar-outer { background: var(--border); border-radius: 6px; height: 10px; overflow: hidden; }
+    .vote-bar-inner { height: 100%; border-radius: 6px; transition: width 0.4s; }
+    .vote-bar-accent { background: var(--accent); }
+    .vote-bar-green { background: var(--green); }
+    .vote-bar-dim { background: var(--text-dim); }
+
+    /* ===== LEADERBOARD ===== */
+    .leaderboard-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: var(--surface2);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+    .leaderboard-rank {
+      font-size: 1.2rem;
+      font-weight: 800;
+      width: 36px;
+      color: var(--text-dim);
+    }
+    .leaderboard-rank.gold { color: #ffd700; }
+    .leaderboard-rank.silver { color: #c0c0c0; }
+    .leaderboard-rank.bronze { color: #cd7f32; }
+    .leaderboard-name { flex: 1; font-size: 1.05rem; font-weight: 600; }
+    .leaderboard-score { font-size: 1.3rem; font-weight: 800; color: var(--accent2); }
+    .leaderboard-row.highlight { border-color: var(--accent2); background: #1f1500; }
+
+    /* ===== MISC ===== */
+    .gap { height: 16px; }
+    .gap-sm { height: 8px; }
+    .gap-lg { height: 28px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 99px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .pill.correct { background: #0a2a0a; border-color: var(--green); color: var(--green); }
+    .pill.wrong { background: #2a0a0a; border-color: var(--accent); color: var(--accent); }
+
+    .waiting-icon { font-size: 3rem; margin-bottom: 16px; }
+    .slide-counter { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .app-header h1 { font-size: 1.1rem; }
+
+    /* ===== ADMIN PANEL ===== */
+    .admin-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .admin-controls button { flex: 1; min-width: 120px; }
+    .vote-tally {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .vote-tally h3 { margin-bottom: 12px; }
+
+    .reveal-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stat-box {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .stat-box .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .stat-box .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+    .award-box {
+      background: var(--surface2);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      border: 2px solid var(--border);
+      flex: 1;
+      min-width: 200px;
+    }
+    .award-icon { font-size: 2.5rem; }
+    .award-title { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
+    .award-name { font-size: 1.3rem; font-weight: 800; }
+
+    @media (max-width: 500px) {
+      .reveal-stats { grid-template-columns: 1fr 1fr; }
+      .name-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="screen-login" class="screen center active">
+  <div class="card" style="width:100%;max-width:380px">
+    <h1 style="margin-bottom:6px">Two Truths<br><span class="accent">&amp; One Lie</span></h1>
+    <p class="dim" style="margin-bottom:24px">Party Game</p>
+    <div id="login-name-section">
+      <label for="player-name-input">Your Name</label>
+      <select id="player-name-input"><option value="">— choose your name —</option></select>
+      <button class="btn btn-primary btn-full" onclick="playerJoin()">Join Game</button>
+      <hr class="divider">
+      <button class="btn btn-secondary btn-full" onclick="showAdminLogin()">Admin Login</button>
+    </div>
+    <div id="login-admin-section" style="display:none">
+      <label for="admin-password-input">Admin Password</label>
+      <input type="password" id="admin-password-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()" />
+      <button class="btn btn-primary btn-full" onclick="adminLogin()">Login as Admin</button>
+      <button class="btn btn-secondary btn-full" onclick="hideAdminLogin()">Back</button>
+    </div>
+    <p id="login-error" class="accent" style="margin-top:10px;font-size:0.9rem;display:none"></p>
+  </div>
+</div>
+
+<!-- ===================== PLAYER SCREEN ===================== -->
+<div id="screen-player" class="screen" style="flex-direction:column;padding:0">
+  <div class="app-header">
+    <h1>Two Truths &amp; One Lie</h1>
+    <span id="player-badge" class="badge badge-lobby">Waiting</span>
+  </div>
+  <div style="padding:20px;flex:1">
+
+    <!-- Lobby state -->
+    <div id="player-lobby" style="display:none">
+      <div class="card center" style="margin-top:60px;padding:40px">
+        <div class="waiting-icon">🎮</div>
+        <h2>Get Ready!</h2>
+        <p class="dim" style="margin-top:8px">Waiting for the host to open voting...</p>
+      </div>
+    </div>
+
+    <!-- Voting state -->
+    <div id="player-voting" style="display:none">
+      <p class="slide-counter" id="player-slide-counter"></p>
+      <h2 style="margin-bottom:4px">Guess the person &amp; the lie</h2>
+      <p class="dim" style="margin-bottom:20px;font-size:0.9rem">Who do these statements belong to? Which one is the lie?</p>
+
+      <h3 style="margin-bottom:10px">Statements</h3>
+      <div id="player-statements"></div>
+
+      <div class="gap"></div>
+      <h3 style="margin-bottom:10px">Who is this about?</h3>
+      <div class="name-grid" id="player-name-grid"></div>
+
+      <div class="gap"></div>
+      <button class="btn btn-primary btn-full" id="player-submit-btn" onclick="submitVote()" disabled>Submit Vote</button>
+      <p id="player-vote-error" class="accent" style="font-size:0.9rem;margin-top:8px;display:none"></p>
+    </div>
+
+    <!-- Submitted / waiting state -->
+    <div id="player-submitted" style="display:none">
+      <div class="card center" style="margin-top:60px;padding:40px">
+        <div class="waiting-icon">✅</div>
+        <h2>Vote Submitted!</h2>
+        <p class="dim" style="margin-top:8px">Waiting for the next round...</p>
+        <div class="gap"></div>
+        <div id="player-submitted-summary" style="text-align:left;background:var(--surface2);border-radius:12px;padding:16px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Reveal phase -->
+    <div id="player-reveal-wait" style="display:none">
+      <div class="card center" style="margin-top:60px;padding:40px">
+        <div class="waiting-icon">🔍</div>
+        <h2>Reveal Time!</h2>
+        <p class="dim" style="margin-top:8px">Watch the screen — the host is revealing answers!</p>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="player-leaderboard" style="display:none">
+      <div class="gap"></div>
+      <h2 style="text-align:center;margin-bottom:20px">Final Scores</h2>
+      <div id="player-leaderboard-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== ADMIN SCREEN ===================== -->
+<div id="screen-admin" class="screen" style="flex-direction:column;padding:0">
+  <div class="app-header">
+    <h1>Admin Panel</h1>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="admin-phase-badge" class="badge badge-lobby">Lobby</span>
+      <button class="btn btn-secondary" style="padding:6px 12px;font-size:0.8rem" onclick="adminReset()">Reset</button>
+    </div>
+  </div>
+
+  <div style="padding:20px;flex:1;max-width:800px;width:100%;margin:0 auto">
+
+    <!-- Game rounds view -->
+    <div id="admin-game-view">
+      <p class="slide-counter" id="admin-slide-counter"></p>
+      <h2 id="admin-slide-title" style="margin-bottom:16px"></h2>
+
+      <div id="admin-statements"></div>
+
+      <div class="gap"></div>
+      <div class="admin-controls" id="admin-controls">
+        <button class="btn btn-success" id="btn-open-voting" onclick="adminOpenVoting()">Open Voting</button>
+        <button class="btn btn-warning" id="btn-close-voting" onclick="adminCloseVoting()">Close Voting</button>
+        <button class="btn btn-info" id="btn-next-round" onclick="adminNextRound()">Next Round →</button>
+      </div>
+
+      <div class="vote-tally" id="admin-vote-tally" style="display:none">
+        <h3>Live Vote Count: <span id="admin-vote-count">0</span> votes</h3>
+        <div class="gap-sm"></div>
+        <div id="admin-name-tally"></div>
+      </div>
+    </div>
+
+    <!-- Reveal phase view -->
+    <div id="admin-reveal-view" style="display:none">
+      <h2 style="margin-bottom:4px">Reveal Phase</h2>
+      <p class="dim" style="margin-bottom:20px">Step through each slide to reveal answers</p>
+      <div id="admin-reveal-content"></div>
+      <div class="gap"></div>
+      <div class="admin-controls">
+        <button class="btn btn-primary" id="btn-reveal-next" onclick="adminRevealNext()">Reveal Next Slide</button>
+        <button class="btn btn-success" id="btn-show-leaderboard" onclick="adminShowLeaderboard()" style="display:none">Show Leaderboard</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard view -->
+    <div id="admin-leaderboard-view" style="display:none">
+      <h2 style="text-align:center;margin-bottom:20px">Final Leaderboard</h2>
+      <div id="admin-leaderboard-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let myRole = null;        // 'player' | 'admin'
+let myName = null;
+let adminToken = null;
+let gameData = null;      // players, totalSlides
+let gameState = null;     // phase, currentSlide, etc.
+let ws = null;
+let selectedName = null;
+let selectedLie = null;
+let hasVotedThisRound = false;
+let lastSubmission = null; // { guessedName, lieIndex }
+let currentRevealData = null;
+let revealsCompleted = 0;
+let totalReveals = 0;
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsPort = window.__WS_PORT__ || location.port || (location.protocol === 'https:' ? 443 : 80);
+  ws = new WebSocket(`${proto}://${location.hostname}:${wsPort}`);
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'state') {
+      handleStateUpdate(msg.data);
+    } else if (msg.type === 'reveal') {
+      handleRevealUpdate(msg.data);
+    } else if (msg.type === 'leaderboard') {
+      handleLeaderboardUpdate(msg.data);
+    }
+  };
+
+  ws.onclose = () => setTimeout(connectWS, 2000);
+}
+
+// ============================================================
+// API HELPERS
+// ============================================================
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (adminToken) headers['x-admin-token'] = adminToken;
+  const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  return res.json();
+}
+
+// ============================================================
+// LOGIN FLOW
+// ============================================================
+async function loadGameData() {
+  const res = await fetch('/api/game-data');
+  gameData = await res.json();
+  const sel = document.getElementById('player-name-input');
+  gameData.players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+}
+
+function showAdminLogin() {
+  document.getElementById('login-name-section').style.display = 'none';
+  document.getElementById('login-admin-section').style.display = '';
+  document.getElementById('admin-password-input').focus();
+}
+
+function hideAdminLogin() {
+  document.getElementById('login-admin-section').style.display = 'none';
+  document.getElementById('login-name-section').style.display = '';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+async function playerJoin() {
+  const sel = document.getElementById('player-name-input');
+  const name = sel.value;
+  if (!name) return showLoginError('Please choose your name');
+  myName = name;
+  myRole = 'player';
+  connectWS();
+  const stateRes = await fetch('/api/state');
+  gameState = await stateRes.json();
+  showScreen('screen-player');
+  renderPlayerView();
+}
+
+async function adminLogin() {
+  const pw = document.getElementById('admin-password-input').value;
+  const res = await api('POST', '/api/admin/login', { password: pw });
+  if (res.ok) {
+    adminToken = res.token;
+    myRole = 'admin';
+    connectWS();
+    const [stateRes, fullRes] = await Promise.all([
+      fetch('/api/state'),
+      fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } }),
+    ]);
+    gameState = await stateRes.json();
+    const full = await fullRes.json();
+    gameData = { players: full.gameData.players, totalSlides: full.gameData.slides.length };
+    totalReveals = gameData.totalSlides;
+    showScreen('screen-admin');
+    renderAdminView(full);
+  } else {
+    showLoginError('Wrong password');
+  }
+}
+
+// ============================================================
+// SCREEN ROUTER
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showOnly(parent, id) {
+  parent.querySelectorAll(':scope > div[id]').forEach(el => el.style.display = 'none');
+  document.getElementById(id).style.display = '';
+}
+
+// ============================================================
+// PLAYER VIEW
+// ============================================================
+function renderPlayerView() {
+  if (!gameState) return;
+  const phase = gameState.phase;
+  const badge = document.getElementById('player-badge');
+
+  const panelIds = ['player-lobby','player-voting','player-submitted','player-reveal-wait','player-leaderboard'];
+  panelIds.forEach(id => document.getElementById(id).style.display = 'none');
+
+  if (phase === 'leaderboard') {
+    badge.className = 'badge badge-reveal';
+    badge.textContent = 'Done!';
+    document.getElementById('player-leaderboard').style.display = '';
+    return;
+  }
+
+  if (phase === 'reveal') {
+    badge.className = 'badge badge-reveal';
+    badge.textContent = 'Reveal!';
+    document.getElementById('player-reveal-wait').style.display = '';
+    return;
+  }
+
+  if (hasVotedThisRound) {
+    badge.className = 'badge badge-closed';
+    badge.textContent = 'Voted';
+    document.getElementById('player-submitted').style.display = '';
+    renderSubmittedSummary();
+    return;
+  }
+
+  if (phase === 'lobby' || phase === 'closed') {
+    badge.className = 'badge badge-lobby';
+    badge.textContent = 'Waiting';
+    document.getElementById('player-lobby').style.display = '';
+    return;
+  }
+
+  if (phase === 'voting') {
+    badge.className = 'badge badge-voting';
+    badge.textContent = 'Vote Now!';
+    document.getElementById('player-voting').style.display = '';
+    renderVotingView();
+  }
+}
+
+async function renderVotingView() {
+  const res = await fetch('/api/game-data');
+  const data = await res.json();
+  const slideNum = gameState.currentSlide + 1;
+  const total = gameState.totalSlides;
+
+  document.getElementById('player-slide-counter').textContent = `Round ${slideNum} of ${total}`;
+
+  const stmtsEl = document.getElementById('player-statements');
+  stmtsEl.innerHTML = '';
+  data.currentSlideStatements.forEach((stmt, i) => {
+    const card = document.createElement('div');
+    card.className = 'statement-card' + (selectedLie === i ? ' selected' : '');
+    card.innerHTML = `<div class="statement-label">Statement ${i + 1}</div><div class="statement-text">${escHtml(stmt)}</div>`;
+    card.onclick = () => selectLie(i, card);
+    stmtsEl.appendChild(card);
+  });
+
+  const nameGrid = document.getElementById('player-name-grid');
+  nameGrid.innerHTML = '';
+  data.players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'name-btn' + (selectedName === p ? ' selected' : '');
+    btn.textContent = p;
+    btn.onclick = () => selectPlayerName(p);
+    nameGrid.appendChild(btn);
+  });
+
+  updateSubmitBtn();
+}
+
+function selectLie(index, card) {
+  selectedLie = index;
+  document.querySelectorAll('.statement-card').forEach((c, i) => {
+    c.classList.toggle('selected', i === index);
+  });
+  updateSubmitBtn();
+}
+
+function selectPlayerName(name) {
+  selectedName = name;
+  document.querySelectorAll('.name-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.textContent === name);
+  });
+  updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+  const btn = document.getElementById('player-submit-btn');
+  if (btn) btn.disabled = selectedName === null || selectedLie === null;
+}
+
+async function submitVote() {
+  const errEl = document.getElementById('player-vote-error');
+  errEl.style.display = 'none';
+  const res = await api('POST', '/api/vote', {
+    voterName: myName,
+    guessedName: selectedName,
+    lieIndex: selectedLie,
+  });
+  if (res.ok) {
+    hasVotedThisRound = true;
+    lastSubmission = { guessedName: selectedName, lieIndex: selectedLie };
+    renderPlayerView();
+  } else {
+    errEl.textContent = res.error || 'Vote failed';
+    errEl.style.display = '';
+  }
+}
+
+function renderSubmittedSummary() {
+  const el = document.getElementById('player-submitted-summary');
+  if (!lastSubmission) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:10px">Your vote:</p>
+    <p><strong>Person:</strong> ${escHtml(lastSubmission.guessedName)}</p>
+    <p style="margin-top:6px"><strong>Lie:</strong> Statement ${lastSubmission.lieIndex + 1}</p>
+  `;
+}
+
+function renderPlayerLeaderboard(data) {
+  const el = document.getElementById('player-leaderboard-content');
+  el.innerHTML = renderLeaderboardHTML(data);
+}
+
+// ============================================================
+// ADMIN VIEW
+// ============================================================
+function renderAdminView(full) {
+  const phase = full ? full.state.phase : gameState.phase;
+  const badge = document.getElementById('admin-phase-badge');
+
+  ['admin-game-view','admin-reveal-view','admin-leaderboard-view'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+
+  if (phase === 'leaderboard') {
+    badge.className = 'badge badge-reveal'; badge.textContent = 'Leaderboard';
+    document.getElementById('admin-leaderboard-view').style.display = '';
+    if (full) renderAdminLeaderboard(full);
+    return;
+  }
+
+  if (phase === 'reveal') {
+    badge.className = 'badge badge-reveal'; badge.textContent = 'Reveal';
+    document.getElementById('admin-reveal-view').style.display = '';
+    updateRevealControls();
+    return;
+  }
+
+  badge.className = phase === 'voting' ? 'badge badge-voting' : 'badge badge-lobby';
+  badge.textContent = phase === 'voting' ? 'Voting Open' : phase === 'closed' ? 'Voting Closed' : 'Lobby';
+
+  document.getElementById('admin-game-view').style.display = '';
+  renderAdminSlide(full);
+  updateAdminControls(phase);
+}
+
+async function renderAdminSlide(full) {
+  let slides, currentSlide;
+  if (full) {
+    slides = full.gameData.slides;
+    currentSlide = full.state.currentSlide;
+  } else {
+    const res = await fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } });
+    const data = await res.json();
+    slides = data.gameData.slides;
+    currentSlide = data.state.currentSlide;
+  }
+
+  const slide = slides[currentSlide];
+  document.getElementById('admin-slide-counter').textContent =
+    `Round ${currentSlide + 1} of ${slides.length}`;
+  document.getElementById('admin-slide-title').textContent =
+    `Who does this belong to? (Answer: ${slide.correctName})`;
+
+  const stmtsEl = document.getElementById('admin-statements');
+  stmtsEl.innerHTML = '';
+  slide.statements.forEach((stmt, i) => {
+    const isLie = i === slide.lieIndex;
+    const card = document.createElement('div');
+    card.className = 'statement-card' + (isLie ? ' is-lie' : ' is-truth');
+    card.innerHTML = `
+      <div class="statement-label">Statement ${i + 1} — ${isLie ? '🔴 LIE' : '✅ TRUTH'}</div>
+      <div class="statement-text">${escHtml(stmt)}</div>
+    `;
+    stmtsEl.appendChild(card);
+  });
+
+  document.getElementById('admin-vote-tally').style.display = 'none';
+}
+
+function updateAdminControls(phase) {
+  const btnOpen = document.getElementById('btn-open-voting');
+  const btnClose = document.getElementById('btn-close-voting');
+  const btnNext = document.getElementById('btn-next-round');
+  btnOpen.disabled = phase !== 'lobby' && phase !== 'closed';
+  btnClose.disabled = phase !== 'voting';
+  btnNext.disabled = phase !== 'closed';
+
+  if (phase === 'voting') {
+    document.getElementById('admin-vote-tally').style.display = '';
+  }
+}
+
+async function adminOpenVoting() {
+  await api('POST', '/api/admin/open-voting');
+}
+
+async function adminCloseVoting() {
+  await api('POST', '/api/admin/close-voting');
+}
+
+async function adminNextRound() {
+  const res = await api('POST', '/api/admin/next-round');
+  if (res.phase === 'reveal') {
+    revealsCompleted = 0;
+    totalReveals = gameData.totalSlides;
+    gameState.phase = 'reveal';
+    renderAdminView(null);
+  }
+}
+
+function updateRevealControls() {
+  const btnNext = document.getElementById('btn-reveal-next');
+  const btnLeaderboard = document.getElementById('btn-show-leaderboard');
+  const allDone = revealsCompleted >= totalReveals;
+  btnNext.style.display = allDone ? 'none' : '';
+  btnLeaderboard.style.display = allDone ? '' : 'none';
+}
+
+async function adminRevealNext() {
+  const res = await api('POST', '/api/admin/reveal-next');
+  if (res.ok) {
+    revealsCompleted++;
+    renderAdminRevealCard(res.revealData, true);
+    updateRevealControls();
+  }
+}
+
+function renderAdminRevealCard(data, prepend) {
+  const container = document.getElementById('admin-reveal-content');
+  const card = buildRevealCard(data);
+  if (prepend) container.insertBefore(card, container.firstChild);
+  else container.appendChild(card);
+}
+
+function buildRevealCard(data) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.style.marginBottom = '16px';
+  const nameBars = gameData.players
+    .map(p => {
+      const count = data.nameCounts[p] || 0;
+      const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
+      const isCorrect = p === data.correctName;
+      return `
+        <div class="vote-bar-wrap">
+          <div class="vote-bar-label">
+            <span>${escHtml(p)}${isCorrect ? ' 👑' : ''}</span>
+            <span>${count} vote${count !== 1 ? 's' : ''} (${pct}%)</span>
+          </div>
+          <div class="vote-bar-outer">
+            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}"
+                 style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+  const lieStatements = [0,1,2].map(i => {
+    const count = data.lieIndexCounts[i] || 0;
+    const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
+    const isCorrect = i === data.lieIndex;
+    return `
+      <div class="vote-bar-wrap">
+        <div class="vote-bar-label">
+          <span>Statement ${i+1}${isCorrect ? ' 🎯 (LIE)' : ''}</span>
+          <span>${count} (${pct}%)</span>
+        </div>
+        <div class="vote-bar-outer">
+          <div class="vote-bar-inner ${isCorrect ? 'vote-bar-accent' : 'vote-bar-dim'}"
+               style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  div.innerHTML = `
+    <h3 style="margin-bottom:4px">Round ${data.slideIndex + 1}</h3>
+    <p style="margin-bottom:16px"><strong class="accent3">Answer: ${escHtml(data.correctName)}</strong>
+      &nbsp;•&nbsp; <strong class="accent">Lie: Statement ${data.lieIndex + 1}</strong></p>
+    <div class="reveal-stats">
+      <div class="stat-box">
+        <div class="stat-num green">${data.whoCorrectCount}</div>
+        <div class="stat-label">Got WHO right</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num accent">${data.lieCorrectCount}</div>
+        <div class="stat-label">Got LIE right</div>
+      </div>
+    </div>
+    <h3 style="margin-bottom:10px">WHO guesses</h3>
+    ${nameBars}
+    <h3 style="margin:14px 0 10px">LIE guesses</h3>
+    ${lieStatements}
+  `;
+  return div;
+}
+
+async function adminShowLeaderboard() {
+  const res = await api('POST', '/api/admin/show-leaderboard');
+  if (res.ok) {
+    document.getElementById('admin-reveal-view').style.display = 'none';
+    document.getElementById('admin-leaderboard-view').style.display = '';
+    renderAdminLeaderboard({ scores: Object.fromEntries(res.leaderboard.map(r => [r.name, r.score])), ...res });
+  }
+}
+
+function renderAdminLeaderboard(data) {
+  const el = document.getElementById('admin-leaderboard-content');
+  el.innerHTML = renderLeaderboardHTML(data);
+}
+
+async function adminReset() {
+  if (!confirm('Reset the entire game? All votes will be lost.')) return;
+  await api('POST', '/api/admin/reset');
+  hasVotedThisRound = false;
+  lastSubmission = null;
+  selectedName = null;
+  selectedLie = null;
+  revealsCompleted = 0;
+  const stateRes = await fetch('/api/state');
+  gameState = await stateRes.json();
+  renderAdminView(null);
+}
+
+// ============================================================
+// SHARED LEADERBOARD RENDERER
+// ============================================================
+function renderLeaderboardHTML(data) {
+  const { leaderboard, bestDetective, mostMysterious } = data;
+  const ranks = ['🥇', '🥈', '🥉'];
+  const rankClass = ['gold', 'silver', 'bronze'];
+
+  const rows = leaderboard.map((entry, i) => {
+    const isBest = entry.name === bestDetective;
+    return `
+      <div class="leaderboard-row${isBest ? ' highlight' : ''}">
+        <div class="leaderboard-rank ${rankClass[i] || ''}">${ranks[i] || (i + 1)}</div>
+        <div class="leaderboard-name">${escHtml(entry.name)}${isBest ? ' 🕵️' : ''}</div>
+        <div class="leaderboard-score">${entry.score}pts</div>
+      </div>`;
+  }).join('');
+
+  const awards = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
+      <div class="award-box" style="border-color:var(--accent2)">
+        <div class="award-icon">🕵️</div>
+        <div class="award-title">Best Detective</div>
+        <div class="award-name accent2">${escHtml(bestDetective || '—')}</div>
+      </div>
+      <div class="award-box" style="border-color:var(--accent3)">
+        <div class="award-icon">🎭</div>
+        <div class="award-title">Most Mysterious</div>
+        <div class="award-name accent3">${escHtml(mostMysterious?.player || '—')}</div>
+        <div class="dim" style="font-size:0.8rem;margin-top:4px">fooled ${mostMysterious?.count || 0} people</div>
+      </div>
+    </div>
+  `;
+
+  const scoring = `
+    <p class="dim" style="font-size:0.8rem;margin-top:16px;text-align:center">
+      Scoring: Correct WHO = 2pts · Correct LIE = 2pts · Both correct = 5pts bonus
+    </p>`;
+
+  return awards + rows + scoring;
+}
+
+// ============================================================
+// STATE UPDATE HANDLERS
+// ============================================================
+function handleStateUpdate(newState) {
+  const prevSlide = gameState ? gameState.currentSlide : -1;
+  gameState = newState;
+
+  if (newState.currentSlide !== prevSlide) {
+    hasVotedThisRound = false;
+    lastSubmission = null;
+    selectedName = null;
+    selectedLie = null;
+  }
+
+  if (myRole === 'player') {
+    renderPlayerView();
+  } else if (myRole === 'admin') {
+    // Update badge and controls
+    const badge = document.getElementById('admin-phase-badge');
+    const phase = newState.phase;
+    badge.className = phase === 'voting' ? 'badge badge-voting' :
+                      phase === 'reveal' ? 'badge badge-reveal' :
+                      phase === 'closed' ? 'badge badge-closed' : 'badge badge-lobby';
+    badge.textContent = phase === 'voting' ? 'Voting Open' :
+                        phase === 'reveal' ? 'Reveal' :
+                        phase === 'closed' ? 'Voting Closed' :
+                        phase === 'leaderboard' ? 'Leaderboard' : 'Lobby';
+
+    if (phase === 'reveal') {
+      document.getElementById('admin-game-view').style.display = 'none';
+      document.getElementById('admin-reveal-view').style.display = '';
+      updateRevealControls();
+    } else if (phase !== 'leaderboard') {
+      renderAdminSlide(null);
+      updateAdminControls(phase);
+    }
+
+    if (phase === 'voting') {
+      updateVoteTally(newState.voteCount);
+    }
+  }
+}
+
+async function updateVoteTally(count) {
+  document.getElementById('admin-vote-count').textContent = count;
+  const tally = document.getElementById('admin-vote-tally');
+  tally.style.display = '';
+
+  // Fetch live name breakdown for admin
+  const res = await fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } });
+  const data = await res.json();
+  const slideVotes = data.state.votes[data.state.currentSlide] || {};
+  const allVotes = Object.values(slideVotes);
+  const nameCounts = {};
+  data.gameData.players.forEach(p => { nameCounts[p] = 0; });
+  allVotes.forEach(v => { nameCounts[v.guessedName] = (nameCounts[v.guessedName] || 0) + 1; });
+
+  const tallyEl = document.getElementById('admin-name-tally');
+  tallyEl.innerHTML = Object.entries(nameCounts)
+    .filter(([, c]) => c > 0)
+    .sort(([, a], [, b]) => b - a)
+    .map(([name, c]) => {
+      const pct = allVotes.length > 0 ? Math.round(c / allVotes.length * 100) : 0;
+      return `
+        <div class="vote-bar-wrap">
+          <div class="vote-bar-label"><span>${escHtml(name)}</span><span>${c} (${pct}%)</span></div>
+          <div class="vote-bar-outer">
+            <div class="vote-bar-inner vote-bar-dim" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('') || '<p class="dim">No votes yet</p>';
+}
+
+function handleRevealUpdate(data) {
+  if (myRole === 'player') return; // players don't see this detail
+  // Already handled by adminRevealNext for admin; broadcast is for admin screen only
+}
+
+function handleLeaderboardUpdate(data) {
+  gameState = data.publicState;
+  if (myRole === 'player') {
+    renderPlayerView();
+    renderPlayerLeaderboard(data);
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadGameData();
+  const stateRes = await fetch('/api/state');
+  gameState = await stateRes.json();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+{
+  "adminPassword": "party2024",
+  "players": [
+    "Alice", "Bob", "Charlie", "Diana", "Ethan",
+    "Fiona", "George", "Hannah", "Ivan", "Julia",
+    "Kevin", "Laura", "Mike", "Nina"
+  ],
+  "slides": [
+    {
+      "statements": [
+        "I once accidentally called my teacher 'Mom' in front of the whole class",
+        "I can solve a Rubik's cube in under two minutes",
+        "I have never eaten a hamburger in my entire life"
+      ],
+      "correctName": "Alice",
+      "lieIndex": 1
+    },
+    {
+      "statements": [
+        "I lived in three different countries before the age of 10",
+        "I once won a regional spelling bee competition",
+        "I am afraid of butterflies"
+      ],
+      "correctName": "Bob",
+      "lieIndex": 0
+    },
+    {
+      "statements": [
+        "I broke my arm trying to do a cartwheel at a wedding",
+        "I once ate an entire jar of peanut butter in one sitting",
+        "I have a twin sibling who lives in another state"
+      ],
+      "correctName": "Charlie",
+      "lieIndex": 2
+    },
+    {
+      "statements": [
+        "I have met a celebrity completely by accident at a grocery store",
+        "I can speak four languages fluently",
+        "I once slept through an earthquake"
+      ],
+      "correctName": "Diana",
+      "lieIndex": 1
+    },
+    {
+      "statements": [
+        "I was an extra in a movie when I was a child",
+        "I have never lost a game of chess",
+        "I once hiked 20 miles in a single day"
+      ],
+      "correctName": "Ethan",
+      "lieIndex": 1
+    },
+    {
+      "statements": [
+        "I have been skydiving twice",
+        "I once forgot my own birthday for an entire week",
+        "I learned to drive in a parking lot using a golf cart"
+      ],
+      "correctName": "Fiona",
+      "lieIndex": 2
+    },
+    {
+      "statements": [
+        "I can juggle five balls at once",
+        "I have read the entire Harry Potter series in one week",
+        "I once got lost in an IKEA for over two hours"
+      ],
+      "correctName": "George",
+      "lieIndex": 0
+    },
+    {
+      "statements": [
+        "I have a phobia of elevators and always take the stairs",
+        "I once cooked Thanksgiving dinner for 30 people by myself",
+        "I sang in a band that performed at a real music venue"
+      ],
+      "correctName": "Hannah",
+      "lieIndex": 1
+    },
+    {
+      "statements": [
+        "I have never been on an airplane",
+        "I once found $200 in an old jacket pocket",
+        "I trained for a half-marathon but quit on day one"
+      ],
+      "correctName": "Ivan",
+      "lieIndex": 2
+    },
+    {
+      "statements": [
+        "I have been to all seven continents",
+        "I once convinced my entire family I was a vegetarian for three years",
+        "I can identify any dog breed on sight"
+      ],
+      "correctName": "Julia",
+      "lieIndex": 0
+    },
+    {
+      "statements": [
+        "I grew up without a TV in the house",
+        "I have run a 5K in under 20 minutes",
+        "I once had a pet iguana named Gerald"
+      ],
+      "correctName": "Kevin",
+      "lieIndex": 2
+    },
+    {
+      "statements": [
+        "I can do a backflip on a trampoline",
+        "I was grounded for an entire summer when I was 14",
+        "I have never gotten a cavity in my life"
+      ],
+      "correctName": "Laura",
+      "lieIndex": 0
+    },
+    {
+      "statements": [
+        "I once accidentally sent a very personal text to my boss",
+        "I have won money at a casino three times",
+        "I was the captain of my high school debate team"
+      ],
+      "correctName": "Mike",
+      "lieIndex": 2
+    },
+    {
+      "statements": [
+        "I collected stamps as a hobby until I was 16",
+        "I once cried at a fast food commercial",
+        "I have a black belt in karate"
+      ],
+      "correctName": "Nina",
+      "lieIndex": 2
+    }
+  ]
+}

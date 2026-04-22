@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/local/bin/**)",
+      "Bash(command -v npm)",
+      "Bash(command -v python3)",
+      "Bash(command -v python)",
+      "Bash(command -v deno)",
+      "Bash(command -v bun)",
+      "Bash(python3 -c \"import websockets; print\\('websockets ok'\\)\")",
+      "Bash(python3 -c \"import flask; print\\('flask ok'\\)\")",
+      "Bash(python3 -c \"import aiohttp; print\\('aiohttp ok'\\)\")",
+      "Bash(python3 -c \"import http.server, json, threading, asyncio; print\\('stdlib ok'\\)\")",
+      "Bash(python3 server.py)",
+      "Bash(curl -s http://localhost:3000/api/state)",
+      "Bash(curl -s -X POST http://localhost:3000/api/admin/login -H 'Content-Type: application/json' -d '{\"password\":\"party2024\"}')",
+      "Bash(python3 -c \"import sys,json; print\\('open-voting:', json.load\\(sys.stdin\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/vote -H 'Content-Type: application/json' -d '{\"voterName\":\"Bob\",\"guessedName\":\"Alice\",\"lieIndex\":2}')",
+      "Bash(python3 -c \"import sys,json; print\\('vote:', json.load\\(sys.stdin\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; print\\('close:', json.load\\(sys.stdin\\)\\)\")",
+      "Bash(pkill -f \"python3 server.py\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(xargs kill *)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(git config *)",
+      "Bash(gh auth *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('html_url'\\) or d.get\\('message','error'\\)\\)\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Initial commit: Two Truths & One Lie party game *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)"
+    ]
+  }
+}
