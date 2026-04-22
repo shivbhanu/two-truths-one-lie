@@ -30,7 +30,9 @@
       "Bash(git add *)",
       "Bash(git commit -m 'Initial commit: Two Truths & One Lie party game *)",
       "Bash(git remote *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

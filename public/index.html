@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Two Truths & One Lie</title>
   <style>
     :root {
@@ -27,10 +30,13 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      min-height: 100dvh;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
     }
 
     /* ===== LAYOUT ===== */
-    .screen { display: none; min-height: 100vh; padding: 20px; }
+    .screen { display: none; min-height: 100vh; min-height: 100dvh; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
     .screen.active { display: flex; flex-direction: column; }
 
     .center { align-items: center; justify-content: center; text-align: center; }
@@ -56,7 +62,7 @@
     /* ===== BUTTONS ===== */
     btn, .btn {
       display: inline-block;
-      padding: 12px 24px;
+      padding: 14px 24px;
       border-radius: 10px;
       border: none;
       font-size: 1rem;
@@ -65,19 +71,19 @@
       transition: all 0.15s;
       text-align: center;
       letter-spacing: 0.3px;
+      min-height: 48px;
+      touch-action: manipulation;
     }
     .btn { display: inline-block; }
     button.btn-primary, .btn-primary {
       background: var(--accent);
       color: white;
     }
-    button.btn-primary:hover { background: #c73652; transform: translateY(-1px); }
     button.btn-secondary, .btn-secondary {
       background: var(--surface2);
       color: var(--text);
       border: 1px solid var(--border);
     }
-    button.btn-secondary:hover { background: var(--border); }
     button.btn-success, .btn-success {
       background: var(--green);
       color: #fff;
@@ -96,22 +102,29 @@
       transform: none !important;
     }
     .btn-full { width: 100%; margin-bottom: 10px; }
+    @media (hover: hover) {
+      button.btn-primary:hover { background: #c73652; transform: translateY(-1px); }
+      button.btn-secondary:hover { background: var(--border); }
+    }
 
     /* ===== INPUTS ===== */
     input[type="text"], input[type="password"], select {
       width: 100%;
-      padding: 12px 16px;
+      padding: 14px 16px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 10px;
       color: var(--text);
-      font-size: 1rem;
+      font-size: 16px; /* prevent iOS auto-zoom */
       margin-bottom: 14px;
       outline: none;
       transition: border-color 0.15s;
+      min-height: 48px;
+      -webkit-appearance: none;
+      appearance: none;
     }
     input:focus, select:focus { border-color: var(--accent); }
-    label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+    label { display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
 
     /* ===== PILL BADGE ===== */
     .badge {
@@ -133,16 +146,22 @@
       background: var(--surface2);
       border: 2px solid var(--border);
       border-radius: 12px;
-      padding: 18px 20px;
+      padding: 20px;
       margin-bottom: 12px;
       cursor: pointer;
       transition: all 0.15s;
       position: relative;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      min-height: 70px;
     }
-    .statement-card:hover { border-color: var(--accent3); }
     .statement-card.selected { border-color: var(--accent); background: #1f0a12; }
     .statement-card.is-lie { border-color: var(--accent); background: #2a0a0a; }
     .statement-card.is-truth { border-color: var(--green); background: #0a1f0a; }
+    @media (hover: hover) {
+      .statement-card:hover { border-color: var(--accent3); }
+    }
     .statement-label {
       font-size: 0.72rem;
       font-weight: 700;
@@ -151,28 +170,34 @@
       margin-bottom: 6px;
       color: var(--text-dim);
     }
-    .statement-text { font-size: 1rem; line-height: 1.5; }
+    .statement-text { font-size: 1rem; line-height: 1.6; }
 
     /* ===== NAME GRID ===== */
     .name-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
       margin: 14px 0;
     }
     .name-btn {
-      padding: 10px 8px;
+      padding: 14px 8px;
       border-radius: 10px;
       border: 2px solid var(--border);
       background: var(--surface2);
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
       text-align: center;
+      min-height: 52px;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .name-btn:hover { border-color: var(--accent3); }
+    @media (hover: hover) {
+      .name-btn:hover { border-color: var(--accent3); }
+    }
     .name-btn.selected { border-color: var(--accent); background: #1f0a12; color: var(--accent); font-weight: 700; }
 
     /* ===== VOTE BAR ===== */
@@ -232,6 +257,9 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 20px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       position: sticky;
@@ -288,9 +316,24 @@
     .award-title { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
     .award-name { font-size: 1.3rem; font-weight: 800; }
 
+    /* ===== STICKY SUBMIT BAR ===== */
+    .submit-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--bg);
+      padding: 12px 0 max(12px, env(safe-area-inset-bottom));
+      margin: 0 -20px -20px;
+      padding-left: 20px;
+      padding-right: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .submit-bar .btn-full { margin-bottom: 0; }
+
     @media (max-width: 500px) {
       .reveal-stats { grid-template-columns: 1fr 1fr; }
       .name-grid { grid-template-columns: repeat(3, 1fr); }
+      .card { padding: 20px; }
+      .admin-controls button { min-height: 52px; font-size: 0.95rem; }
     }
   </style>
 </head>
@@ -324,7 +367,7 @@
     <h1>Two Truths &amp; One Lie</h1>
     <span id="player-badge" class="badge badge-lobby">Waiting</span>
   </div>
-  <div style="padding:20px;flex:1">
+  <div style="padding:20px;padding-bottom:0;flex:1;position:relative">
 
     <!-- Lobby state -->
     <div id="player-lobby" style="display:none">
@@ -349,8 +392,10 @@
       <div class="name-grid" id="player-name-grid"></div>
 
       <div class="gap"></div>
-      <button class="btn btn-primary btn-full" id="player-submit-btn" onclick="submitVote()" disabled>Submit Vote</button>
-      <p id="player-vote-error" class="accent" style="font-size:0.9rem;margin-top:8px;display:none"></p>
+      <div class="submit-bar">
+        <button class="btn btn-primary btn-full" id="player-submit-btn" onclick="submitVote()" disabled>Submit Vote</button>
+        <p id="player-vote-error" class="accent" style="font-size:0.9rem;margin-top:8px;display:none"></p>
+      </div>
     </div>
 
     <!-- Submitted / waiting state -->
