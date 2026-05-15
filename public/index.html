@@ -10,18 +10,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     :root {
-      --bg: #0f0f1a;
-      --surface: #1a1a2e;
-      --surface2: #16213e;
+      --bg: #0a0a15;
+      --surface: #14142a;
+      --surface2: #0e0e22;
       --accent: #e94560;
       --accent2: #f5a623;
       --accent3: #00d2d3;
       --text: #eaeaea;
-      --text-dim: #8888aa;
-      --border: #2a2a4a;
+      --text-dim: #7a7a9a;
+      --border: #24244a;
       --green: #2ecc71;
       --radius: 14px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --shadow: 0 4px 28px rgba(0,0,0,0.5);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,33 +35,49 @@
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior: none;
     }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(233,69,96,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 85%, rgba(0,210,211,0.07) 0%, transparent 50%);
+    }
 
     /* ===== LAYOUT ===== */
-    .screen { display: none; min-height: 100vh; min-height: 100dvh; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    .screen { display: none; min-height: 100vh; min-height: 100dvh; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); position: relative; z-index: 1; }
     .screen.active { display: flex; flex-direction: column; }
-
     .center { align-items: center; justify-content: center; text-align: center; }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 28px;
+      padding: 24px;
       box-shadow: var(--shadow);
     }
 
     /* ===== TYPOGRAPHY ===== */
     h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; }
     h2 { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 700; }
-    h3 { font-size: 1.1rem; font-weight: 600; }
+    h3 { font-size: 1.05rem; font-weight: 600; }
     .dim { color: var(--text-dim); }
     .accent { color: var(--accent); }
     .accent2 { color: var(--accent2); }
     .accent3 { color: var(--accent3); }
     .green { color: var(--green); }
 
+    .title-gradient {
+      background: linear-gradient(135deg, #e94560 10%, #f5a623 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
     /* ===== BUTTONS ===== */
-    btn, .btn {
+    button.btn, .btn {
       display: inline-block;
       padding: 14px 24px;
       border-radius: 10px;
@@ -79,6 +95,7 @@
     button.btn-primary, .btn-primary {
       background: var(--accent);
       color: white;
+      box-shadow: 0 2px 12px rgba(233,69,96,0.25);
     }
     button.btn-secondary, .btn-secondary {
       background: var(--surface2);
@@ -88,25 +105,28 @@
     button.btn-success, .btn-success {
       background: var(--green);
       color: #fff;
+      box-shadow: 0 2px 12px rgba(46,204,113,0.25);
     }
     button.btn-warning, .btn-warning {
       background: var(--accent2);
       color: #111;
+      box-shadow: 0 2px 12px rgba(245,166,35,0.25);
     }
     button.btn-info, .btn-info {
       background: var(--accent3);
       color: #111;
+      box-shadow: 0 2px 12px rgba(0,210,211,0.25);
     }
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none !important;
-    }
+    button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
     .btn-full { width: 100%; margin-bottom: 10px; }
     @media (hover: hover) {
-      button.btn-primary:hover { background: #c73652; transform: translateY(-1px); }
-      button.btn-secondary:hover { background: var(--border); }
+      button.btn-primary:hover:not(:disabled)  { background: #c73652; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(233,69,96,0.45); }
+      button.btn-secondary:hover:not(:disabled) { background: var(--border); }
+      button.btn-success:hover:not(:disabled)  { background: #27ae60; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(46,204,113,0.4); }
+      button.btn-warning:hover:not(:disabled)  { background: #e09018; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.4); }
+      button.btn-info:hover:not(:disabled)     { background: #00bcbd; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,210,211,0.4); }
     }
+    button:not(:disabled):active { opacity: 0.85; transform: scale(0.97) !important; }
 
     /* ===== INPUTS ===== */
     input[type="text"], input[type="password"], select {
@@ -116,102 +136,123 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       color: var(--text);
-      font-size: 16px; /* prevent iOS auto-zoom */
+      font-size: 16px;
       margin-bottom: 14px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       min-height: 48px;
       -webkit-appearance: none;
       appearance: none;
     }
-    input:focus, select:focus { border-color: var(--accent); }
-    label { display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(233,69,96,0.12); }
+    label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
 
     /* ===== PILL BADGE ===== */
     .badge {
       display: inline-block;
-      padding: 4px 12px;
+      padding: 5px 12px;
       border-radius: 99px;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
     }
-    .badge-voting { background: #1a3a1a; color: var(--green); }
-    .badge-closed { background: #3a1a1a; color: var(--accent); }
-    .badge-lobby { background: #1a1a3a; color: var(--accent3); }
-    .badge-reveal { background: #3a2a0a; color: var(--accent2); }
+    .badge-voting  { background: #0f2e0f; color: var(--green); }
+    .badge-closed  { background: #2e0f0f; color: var(--accent); }
+    .badge-lobby   { background: #0f0f2e; color: var(--accent3); }
+    .badge-reveal  { background: #2e1f00; color: var(--accent2); }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.95); }
+    }
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glow-qr {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,210,211,0), var(--shadow); }
+      50%       { box-shadow: 0 0 48px 12px rgba(0,210,211,0.22), var(--shadow); }
+    }
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%            { transform: translateY(-6px); opacity: 1; }
+    }
+    .animate-pulse   { animation: pulse-soft 2.2s ease-in-out infinite; }
+    .animate-fade-in { animation: fade-in-up 0.4s ease both; }
+    .badge-voting    { animation: pulse-soft 2s ease-in-out infinite; }
 
     /* ===== STATEMENT CARDS ===== */
     .statement-card {
       background: var(--surface2);
       border: 2px solid var(--border);
       border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
       position: relative;
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
-      min-height: 70px;
     }
-    .statement-card.selected { border-color: var(--accent); background: #1f0a12; }
-    /* is-lie / is-truth only applied during reveal, not during voting */
-    .statement-card.is-lie { border-color: var(--accent); background: #2a0a0a; }
-    .statement-card.is-truth { border-color: var(--green); background: #0a1f0a; }
+    .statement-card.selected { border-color: var(--accent); background: #1f0a14; transform: scale(1.01); }
+    .statement-card.is-lie   { border-color: var(--accent); background: #220a0a; }
+    .statement-card.is-truth { border-color: var(--green);  background: #0a200a; }
     .statement-card.reveal-plain { cursor: default; }
     @media (hover: hover) {
-      .statement-card:hover { border-color: var(--accent3); }
-      .statement-card.reveal-plain:hover { border-color: var(--border); }
+      .statement-card:not(.reveal-plain):hover { border-color: var(--accent3); background: #0e0e28; }
     }
     .statement-label {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
+      letter-spacing: 1.2px;
+      margin-bottom: 8px;
       color: var(--text-dim);
     }
-    .statement-text { font-size: 1rem; line-height: 1.6; }
+    .statement-card.is-lie .statement-label   { color: var(--accent); }
+    .statement-card.is-truth .statement-label { color: var(--green); }
+    .statement-card.selected .statement-label { color: var(--accent); }
+    .statement-text { font-size: 1rem; line-height: 1.65; }
 
     /* ===== NAME GRID ===== */
     .name-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 10px;
-      margin: 14px 0;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin: 10px 0;
     }
     .name-btn {
-      padding: 14px 8px;
+      padding: 12px 8px;
       border-radius: 10px;
       border: 2px solid var(--border);
       background: var(--surface2);
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
       text-align: center;
-      min-height: 52px;
+      min-height: 48px;
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
     }
     @media (hover: hover) {
-      .name-btn:hover { border-color: var(--accent3); }
+      .name-btn:not(.selected):hover { border-color: var(--accent3); background: #0e1e28; }
     }
     .name-btn.selected { border-color: var(--accent); background: #1f0a12; color: var(--accent); font-weight: 700; }
 
     /* ===== VOTE BAR ===== */
     .vote-bar-wrap { margin: 6px 0 14px; }
-    .vote-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
-    .vote-bar-outer { background: var(--border); border-radius: 6px; height: 10px; overflow: hidden; }
-    .vote-bar-inner { height: 100%; border-radius: 6px; transition: width 0.4s; }
+    .vote-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 5px; }
+    .vote-bar-outer { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; }
+    .vote-bar-inner { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
     .vote-bar-accent { background: var(--accent); }
-    .vote-bar-green { background: var(--green); }
-    .vote-bar-dim { background: var(--text-dim); }
+    .vote-bar-green  { background: var(--green); }
+    .vote-bar-dim    { background: var(--text-dim); }
 
     /* ===== LEADERBOARD ===== */
     .leaderboard-row {
@@ -222,46 +263,80 @@
       background: var(--surface2);
       margin-bottom: 8px;
       border: 1px solid var(--border);
+      transition: transform 0.1s;
     }
-    .leaderboard-rank {
-      font-size: 1.2rem;
-      font-weight: 800;
-      width: 36px;
-      color: var(--text-dim);
-    }
-    .leaderboard-rank.gold { color: #ffd700; }
-    .leaderboard-rank.silver { color: #c0c0c0; }
-    .leaderboard-rank.bronze { color: #cd7f32; }
-    .leaderboard-name { flex: 1; font-size: 1.05rem; font-weight: 600; }
+    .leaderboard-row.rank-1 { background: #1c1500; border-color: #b89a00; }
+    .leaderboard-row.rank-2 { background: #111520; border-color: #707090; }
+    .leaderboard-row.rank-3 { background: #160c00; border-color: #8a5820; }
+    .leaderboard-row.highlight { border-color: var(--accent2) !important; }
+    .leaderboard-rank { font-size: 1.2rem; font-weight: 800; width: 36px; color: var(--text-dim); }
+    .leaderboard-rank.gold   { color: #ffd700; }
+    .leaderboard-rank.silver { color: #b0b0c0; }
+    .leaderboard-rank.bronze { color: #c07830; }
+    .leaderboard-name  { flex: 1; font-size: 1rem; font-weight: 600; }
     .leaderboard-score { font-size: 1.3rem; font-weight: 800; color: var(--accent2); }
-    .leaderboard-row.highlight { border-color: var(--accent2); background: #1f1500; }
 
     /* ===== MISC ===== */
-    .gap { height: 16px; }
+    .gap    { height: 16px; }
     .gap-sm { height: 8px; }
     .gap-lg { height: 28px; }
-    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
     .pill {
       padding: 6px 14px;
       border-radius: 99px;
       background: var(--surface2);
       border: 1px solid var(--border);
       font-size: 0.85rem;
+      white-space: nowrap;
     }
-    .pill.correct { background: #0a2a0a; border-color: var(--green); color: var(--green); }
-    .pill.wrong { background: #2a0a0a; border-color: var(--accent); color: var(--accent); }
+    .pill-detective  { background: rgba(245,166,35,0.08);  border-color: var(--accent2); color: var(--accent2); }
+    .pill-mysterious { background: rgba(0,210,211,0.08);   border-color: var(--accent3); color: var(--accent3); }
+    .waiting-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
 
-    .waiting-icon { font-size: 3rem; margin-bottom: 16px; }
-    .slide-counter { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; }
+    /* ===== WAITING DOTS ===== */
+    .dots span {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      margin: 0 3px;
+      animation: dot-bounce 1.4s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ===== ROUND BANNER ===== */
+    .round-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      margin-bottom: 10px;
+      color: var(--text-dim);
+    }
+
+    /* ===== SLIDE COUNTER ===== */
+    .slide-counter { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 6px; }
 
     /* ===== HEADER ===== */
     .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
-      padding-top: max(16px, env(safe-area-inset-top));
+      padding: 14px 20px;
+      padding-top: max(14px, env(safe-area-inset-top));
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(20px, env(safe-area-inset-right));
       background: var(--surface);
@@ -269,23 +344,56 @@
       position: sticky;
       top: 0;
       z-index: 10;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    .app-header h1 { font-size: 1.1rem; }
+    .app-header h1 { font-size: 1.05rem; }
+
+    /* ===== CARD HERO (login) ===== */
+    .card-hero {
+      background: linear-gradient(150deg, #1c0810 0%, #070c1c 100%);
+      padding: 36px 24px 28px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    }
+
+    /* ===== STEP CARDS (rules) ===== */
+    .step-card { border-top: 3px solid transparent; }
+    .step-1 { border-top-color: var(--accent3); }
+    .step-2 { border-top-color: var(--accent); }
+    .step-3 { border-top-color: var(--accent2); }
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 800; margin-bottom: 12px;
+    }
+    .step-1 .step-circle { background: rgba(0,210,211,0.15); color: var(--accent3); }
+    .step-2 .step-circle { background: rgba(233,69,96,0.15);  color: var(--accent); }
+    .step-3 .step-circle { background: rgba(245,166,35,0.15); color: var(--accent2); }
+
+    /* ===== QR GLOW ===== */
+    .qr-glow {
+      display: inline-block;
+      background: white;
+      padding: 18px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      line-height: 0;
+      animation: glow-qr 2.8s ease-in-out infinite;
+    }
 
     /* ===== ADMIN PANEL ===== */
-    .admin-controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .admin-controls { display: flex; gap: 10px; flex-wrap: wrap; }
     .admin-controls button { flex: 1; min-width: 120px; }
     .vote-tally {
       background: var(--surface2);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 16px;
       margin-top: 16px;
     }
-    .vote-tally h3 { margin-bottom: 12px; }
+    .vote-tally h3 { margin-bottom: 10px; }
 
     .reveal-stats {
       display: grid;
@@ -300,12 +408,8 @@
       text-align: center;
       border: 1px solid var(--border);
     }
-    .stat-box .stat-num {
-      font-size: 2rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .stat-box .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+    .stat-box .stat-num   { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .stat-box .stat-label { font-size: 0.78rem; color: var(--text-dim); margin-top: 4px; }
 
     .award-box {
       background: var(--surface2);
@@ -314,11 +418,11 @@
       text-align: center;
       border: 2px solid var(--border);
       flex: 1;
-      min-width: 200px;
+      min-width: 180px;
     }
-    .award-icon { font-size: 2.5rem; }
-    .award-title { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
-    .award-name { font-size: 1.3rem; font-weight: 800; }
+    .award-icon  { font-size: 2.2rem; }
+    .award-title { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
+    .award-name  { font-size: 1.2rem; font-weight: 800; }
 
     /* ===== PERSONAL RESULT BANNER ===== */
     .result-banner {
@@ -329,10 +433,10 @@
       font-size: 1rem;
       text-align: center;
     }
-    .result-banner.both { background: #0a2a0a; border: 1px solid var(--green); color: var(--green); }
-    .result-banner.who { background: #0a1a2a; border: 1px solid var(--accent3); color: var(--accent3); }
-    .result-banner.lie { background: #1a0a20; border: 1px solid var(--accent2); color: var(--accent2); }
-    .result-banner.none { background: #2a0a0a; border: 1px solid var(--accent); color: var(--accent); }
+    .result-banner.both { background: #0a2a0a; border: 1px solid var(--green);  color: var(--green); }
+    .result-banner.who  { background: #0a1a2a; border: 1px solid var(--accent3); color: var(--accent3); }
+    .result-banner.lie  { background: #1a0a20; border: 1px solid var(--accent2); color: var(--accent2); }
+    .result-banner.none { background: #2a0a0a; border: 1px solid var(--accent);  color: var(--accent); }
 
     /* ===== STICKY SUBMIT BAR ===== */
     .submit-bar {
@@ -347,11 +451,16 @@
     }
     .submit-bar .btn-full { margin-bottom: 0; }
 
+    /* ===== MOBILE ===== */
     @media (max-width: 500px) {
       .reveal-stats { grid-template-columns: 1fr 1fr; }
       .name-grid { grid-template-columns: repeat(3, 1fr); }
-      .card { padding: 20px; }
+      .card { padding: 16px; }
+      .card-hero { padding: 28px 16px 22px; }
       .admin-controls button { min-height: 52px; font-size: 0.95rem; }
+      h1 { font-size: clamp(1.5rem, 8vw, 2.4rem); }
+      .round-banner { padding: 8px 12px; }
+      .award-box { min-width: 140px; padding: 16px; }
     }
   </style>
 </head>
@@ -359,73 +468,76 @@
 
 <!-- ===================== LOGIN SCREEN ===================== -->
 <div id="screen-login" class="screen center active">
-  <div class="card" style="width:100%;max-width:380px">
-    <h1 style="margin-bottom:6px">Two Truths<br><span class="accent">&amp; One Lie</span></h1>
-    <p class="dim" style="margin-bottom:24px">Party Game</p>
-    <div id="login-name-section">
-      <label for="player-name-input">Your Name</label>
-      <select id="player-name-input"><option value="">— choose your name —</option></select>
-      <button class="btn btn-primary btn-full" onclick="playerJoin()">Join Game</button>
-      <hr class="divider">
-      <button class="btn btn-secondary btn-full" onclick="showAdminLogin()">Admin Login</button>
+  <div class="card" style="width:100%;max-width:380px;padding:0;overflow:hidden">
+    <div class="card-hero">
+      <p style="font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:14px">Party Game</p>
+      <h1 class="title-gradient" style="font-size:clamp(2rem,7vw,2.8rem)">Two Truths<br>&amp; One Lie</h1>
     </div>
-    <div id="login-admin-section" style="display:none">
-      <label for="admin-password-input">Admin Password</label>
-      <input type="password" id="admin-password-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()" />
-      <button class="btn btn-primary btn-full" onclick="adminLogin()">Login as Admin</button>
-      <button class="btn btn-secondary btn-full" onclick="hideAdminLogin()">Back</button>
+    <div style="padding:24px">
+      <div id="login-name-section">
+        <label for="player-name-input">Your Name</label>
+        <select id="player-name-input"><option value="">— choose your name —</option></select>
+        <button class="btn btn-primary btn-full" onclick="playerJoin()">Join Game</button>
+        <hr class="divider">
+        <button class="btn btn-secondary btn-full" onclick="showAdminLogin()" style="font-size:0.9rem">Host / Admin Login</button>
+      </div>
+      <div id="login-admin-section" style="display:none">
+        <label for="admin-password-input">Admin Password</label>
+        <input type="password" id="admin-password-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()" />
+        <button class="btn btn-primary btn-full" onclick="adminLogin()">Login as Admin</button>
+        <button class="btn btn-secondary btn-full" onclick="hideAdminLogin()">← Back</button>
+      </div>
+      <p id="login-error" class="accent" style="margin-top:10px;font-size:0.9rem;display:none"></p>
     </div>
-    <p id="login-error" class="accent" style="margin-top:10px;font-size:0.9rem;display:none"></p>
   </div>
 </div>
 
 <!-- ===================== ADMIN RULES SCREEN ===================== -->
 <div id="screen-admin-rules" class="screen center">
-  <div style="text-align:center;padding:20px;max-width:760px;width:100%">
-    <p style="font-size:0.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">How to Play</p>
-    <h1 style="margin-bottom:32px">Two Truths <span class="accent">&amp; One Lie</span></h1>
+  <div style="text-align:center;padding:20px;max-width:800px;width:100%">
+    <p style="font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px">How to Play</p>
+    <h1 style="margin-bottom:36px">Two Truths <span class="accent">&amp; One Lie</span></h1>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;text-align:left">
-      <div class="card">
-        <div style="font-size:2rem;margin-bottom:12px">📖</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:28px;text-align:left">
+      <div class="card step-card step-1 animate-fade-in" style="animation-delay:0.05s">
+        <div class="step-circle">1</div>
         <h3 style="margin-bottom:8px">Read</h3>
-        <p class="dim" style="font-size:0.95rem;line-height:1.6">3 statements appear on screen — 2 are true, 1 is a lie.</p>
+        <p class="dim" style="font-size:0.92rem;line-height:1.65">3 statements appear on screen — 2 are true, 1 is a lie.</p>
       </div>
-      <div class="card">
-        <div style="font-size:2rem;margin-bottom:12px">🗳️</div>
+      <div class="card step-card step-2 animate-fade-in" style="animation-delay:0.15s">
+        <div class="step-circle">2</div>
         <h3 style="margin-bottom:8px">Vote on Your Phone</h3>
-        <p class="dim" style="font-size:0.95rem;line-height:1.6">Guess <strong style="color:var(--text)">WHO</strong> the statements belong to, and <strong style="color:var(--text)">which one is the lie</strong>.</p>
+        <p class="dim" style="font-size:0.92rem;line-height:1.65">Guess <strong style="color:var(--text)">WHO</strong> the statements belong to, and <strong style="color:var(--text)">which one is the lie</strong>.</p>
       </div>
-      <div class="card">
-        <div style="font-size:2rem;margin-bottom:12px">🏆</div>
+      <div class="card step-card step-3 animate-fade-in" style="animation-delay:0.25s">
+        <div class="step-circle">3</div>
         <h3 style="margin-bottom:8px">Score Points</h3>
-        <p class="dim" style="font-size:0.95rem;line-height:1.6">Correct WHO <span class="accent2">+2</span> &nbsp;·&nbsp; Correct LIE <span class="accent2">+2</span> &nbsp;·&nbsp; Both right <span class="green">+5 bonus</span></p>
+        <p class="dim" style="font-size:0.92rem;line-height:1.65">Correct WHO <span class="accent2">+2</span> &nbsp;·&nbsp; Correct LIE <span class="accent2">+2</span> &nbsp;·&nbsp; Both right <span class="green">+5 bonus</span></p>
       </div>
     </div>
 
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px">
-      <div class="pill">🕵️ <strong>Best Detective</strong> — most correct answers</div>
-      <div class="pill">🎭 <strong>Most Mysterious</strong> — fooled the most people</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+      <span class="pill pill-detective">🕵️ <strong>Best Detective</strong> — most correct answers</span>
+      <span class="pill pill-mysterious">🎭 <strong>Most Mysterious</strong> — fooled the most people</span>
     </div>
 
-    <p class="dim" style="margin-bottom:32px;font-size:1rem">
+    <p class="dim" style="margin-bottom:36px;font-size:1rem">
       <span id="rules-player-count" style="color:var(--text);font-weight:700"></span> players &nbsp;·&nbsp; one round each
     </p>
 
-    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 48px" onclick="showWelcome()">Got it — Let's Play! →</button>
+    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 52px" onclick="showWelcome()">Got it — Let's Play! →</button>
   </div>
 </div>
 
 <!-- ===================== ADMIN WELCOME SCREEN ===================== -->
 <div id="screen-admin-welcome" class="screen center">
   <div style="text-align:center;padding:20px;max-width:640px;width:100%">
-    <p style="font-size:0.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px">Get Ready to Play</p>
-    <h1 style="margin-bottom:4px">Two Truths</h1>
-    <h1 style="margin-bottom:36px"><span class="accent">&amp; One Lie</span></h1>
-    <div id="welcome-qr-code" style="display:inline-block;background:white;padding:20px;border-radius:20px;margin-bottom:24px;line-height:0"></div>
-    <p id="welcome-qr-url" style="font-family:monospace;font-size:1.3rem;font-weight:700;color:var(--accent3);margin-bottom:16px;word-break:break-all;padding:0 20px"></p>
-    <p class="dim" style="margin-bottom:40px;font-size:1rem">Scan the code or visit the URL on your phone</p>
-    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 48px" onclick="startGame()">Start Round 1 →</button>
+    <p style="font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px">Scan to Join</p>
+    <h1 style="margin-bottom:36px">Two Truths <span class="accent">&amp; One Lie</span></h1>
+    <div class="qr-glow" id="welcome-qr-code"></div>
+    <p id="welcome-qr-url" style="font-family:monospace;font-size:1.25rem;font-weight:700;color:var(--accent3);margin-bottom:12px;word-break:break-all;padding:0 20px"></p>
+    <p class="dim" style="margin-bottom:40px;font-size:0.95rem">Same WiFi network &nbsp;·&nbsp; Open URL on your phone</p>
+    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 52px" onclick="startGame()">Start Round 1 →</button>
   </div>
 </div>
 
@@ -439,24 +551,26 @@
 
     <!-- Lobby / waiting state -->
     <div id="player-lobby" style="display:none">
-      <div class="card center" style="margin-top:60px;padding:40px">
-        <div class="waiting-icon">🎮</div>
-        <h2>Get Ready!</h2>
-        <p class="dim" style="margin-top:8px">Waiting for the host to open voting...</p>
+      <div class="card center" style="margin-top:50px;padding:44px 28px">
+        <span class="waiting-icon animate-pulse">🎮</span>
+        <h2 style="margin-bottom:8px">Get Ready!</h2>
+        <p class="dim" style="margin-bottom:20px">Waiting for the host to open voting…</p>
+        <div class="dots"><span></span><span></span><span></span></div>
       </div>
     </div>
 
     <!-- Voting state -->
     <div id="player-voting" style="display:none">
-      <p class="slide-counter" id="player-slide-counter"></p>
-      <h2 style="margin-bottom:4px">Guess the person &amp; the lie</h2>
-      <p class="dim" style="margin-bottom:20px;font-size:0.9rem">Who do these statements belong to? Which one is the lie?</p>
+      <div class="round-banner">
+        <span style="font-weight:700;font-size:1rem" id="player-slide-counter"></span>
+        <span class="dim" style="font-size:0.82rem">Select one of each ↓</span>
+      </div>
 
-      <h3 style="margin-bottom:10px">Statements</h3>
+      <p class="section-label" style="color:var(--accent3)">Which statement is the lie?</p>
       <div id="player-statements"></div>
 
       <div class="gap"></div>
-      <h3 style="margin-bottom:10px">Who is this about?</h3>
+      <p class="section-label" style="color:var(--accent)">Who are these about?</p>
       <div class="name-grid" id="player-name-grid"></div>
 
       <div class="gap"></div>
@@ -468,19 +582,19 @@
 
     <!-- Submitted / waiting state -->
     <div id="player-submitted" style="display:none">
-      <div class="card center" style="margin-top:60px;padding:40px">
-        <div class="waiting-icon">✅</div>
-        <h2>Vote Submitted!</h2>
-        <p class="dim" style="margin-top:8px">Waiting for the host to reveal...</p>
-        <div class="gap"></div>
-        <div id="player-submitted-summary" style="text-align:left;background:var(--surface2);border-radius:12px;padding:16px;margin-top:8px"></div>
+      <div class="card center" style="margin-top:40px;padding:40px 24px">
+        <span class="waiting-icon animate-pulse">✅</span>
+        <h2 style="margin-bottom:6px">Vote Submitted!</h2>
+        <p class="dim">Waiting for the host to reveal…</p>
       </div>
+      <div class="gap"></div>
+      <div class="card" id="player-submitted-summary" style="display:none"></div>
     </div>
 
     <!-- Reveal phase — shows the reveal card directly on phone -->
     <div id="player-reveal-wait" style="display:none">
       <div class="gap"></div>
-      <div id="player-reveal-content"></div>
+      <div id="player-reveal-content" class="animate-fade-in"></div>
     </div>
 
     <!-- Leaderboard -->
@@ -496,10 +610,10 @@
 <!-- ===================== ADMIN SCREEN ===================== -->
 <div id="screen-admin" class="screen" style="flex-direction:column;padding:0">
   <div class="app-header">
-    <h1>Admin Panel</h1>
-    <div style="display:flex;align-items:center;gap:10px">
+    <h1 style="font-size:1rem">Two Truths &amp; One Lie</h1>
+    <div style="display:flex;align-items:center;gap:8px">
       <span id="admin-phase-badge" class="badge badge-lobby">Lobby</span>
-      <button class="btn btn-secondary" style="padding:6px 12px;font-size:0.8rem" onclick="adminReset()">Reset</button>
+      <button class="btn btn-secondary" style="padding:6px 12px;font-size:0.78rem" onclick="adminReset()">Reset</button>
     </div>
   </div>
 
@@ -515,12 +629,11 @@
 
       <div class="gap"></div>
       <div class="admin-controls" id="admin-controls">
-        <button class="btn btn-success" id="btn-open-voting" onclick="adminOpenVoting()">Open Voting</button>
+        <button class="btn btn-success" id="btn-open-voting"  onclick="adminOpenVoting()">Open Voting</button>
         <button class="btn btn-warning" id="btn-close-voting" onclick="adminCloseVoting()">Close Voting</button>
-        <button class="btn btn-primary" id="btn-reveal-now" onclick="adminRevealNow()">Reveal Now 🔍</button>
+        <button class="btn btn-primary" id="btn-reveal-now"   onclick="adminRevealNow()">Reveal Now 🔍</button>
       </div>
 
-      <!-- Vote count (voting: count only; closed: per-name bars) -->
       <div class="vote-tally" id="admin-vote-tally" style="display:none">
         <h3 id="admin-vote-tally-title">Votes: <span id="admin-vote-count">0</span></h3>
         <div class="gap-sm"></div>
@@ -528,9 +641,9 @@
       </div>
     </div>
 
-    <!-- Reveal view (shown after admin clicks Reveal Now) -->
+    <!-- Reveal view -->
     <div id="admin-reveal-view" style="display:none">
-      <div id="admin-reveal-content"></div>
+      <div id="admin-reveal-content" class="animate-fade-in"></div>
       <div class="gap"></div>
       <div class="admin-controls">
         <button class="btn btn-info" id="btn-next-round" onclick="adminNextRound()">Next Round →</button>
@@ -539,7 +652,7 @@
 
     <!-- Leaderboard view -->
     <div id="admin-leaderboard-view" style="display:none">
-      <h2 style="text-align:center;margin-bottom:20px">Final Leaderboard</h2>
+      <h2 style="text-align:center;margin-bottom:24px">Final Leaderboard 🏆</h2>
       <div id="admin-leaderboard-content"></div>
     </div>
 
@@ -550,16 +663,16 @@
 // ============================================================
 // STATE
 // ============================================================
-let myRole = null;        // 'player' | 'admin'
+let myRole = null;
 let myName = null;
 let adminToken = null;
-let gameData = null;      // { players, totalSlides }
-let gameState = null;     // phase, currentSlide, totalSlides, voteCount, revealData?
+let gameData = null;
+let gameState = null;
 let ws = null;
 let selectedName = null;
 let selectedLie = null;
 let hasVotedThisRound = false;
-let lastSubmission = null; // { guessedName, lieIndex }
+let lastSubmission = null;
 let welcomeQrRendered = false;
 
 // ============================================================
@@ -730,7 +843,7 @@ async function renderVotingView() {
   data.currentSlideStatements.forEach((stmt, i) => {
     const card = document.createElement('div');
     card.className = 'statement-card' + (selectedLie === i ? ' selected' : '');
-    card.innerHTML = `<div class="statement-label">Statement ${i + 1}</div><div class="statement-text">${escHtml(stmt)}</div>`;
+    card.innerHTML = `<div class="statement-label">Statement ${i + 1}${selectedLie === i ? ' — Selected ✓' : ''}</div><div class="statement-text">${escHtml(stmt)}</div>`;
     card.onclick = () => selectLie(i, card);
     stmtsEl.appendChild(card);
   });
@@ -748,10 +861,11 @@ async function renderVotingView() {
   updateSubmitBtn();
 }
 
-function selectLie(index, card) {
+function selectLie(index) {
   selectedLie = index;
-  document.querySelectorAll('.statement-card').forEach((c, i) => {
+  document.querySelectorAll('#player-statements .statement-card').forEach((c, i) => {
     c.classList.toggle('selected', i === index);
+    c.querySelector('.statement-label').textContent = `Statement ${i + 1}${i === index ? ' — Selected ✓' : ''}`;
   });
   updateSubmitBtn();
 }
@@ -789,34 +903,41 @@ async function submitVote() {
 
 function renderSubmittedSummary() {
   const el = document.getElementById('player-submitted-summary');
-  if (!lastSubmission) { el.innerHTML = ''; return; }
+  if (!lastSubmission) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
   el.innerHTML = `
-    <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:10px">Your vote:</p>
-    <p><strong>Person:</strong> ${escHtml(lastSubmission.guessedName)}</p>
-    <p style="margin-top:6px"><strong>Lie:</strong> Statement ${lastSubmission.lieIndex + 1}</p>
+    <p class="section-label">Your vote</p>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div>
+        <p class="dim" style="font-size:0.78rem;margin-bottom:3px">Person</p>
+        <p style="font-weight:700;font-size:1.05rem">${escHtml(lastSubmission.guessedName)}</p>
+      </div>
+      <div>
+        <p class="dim" style="font-size:0.78rem;margin-bottom:3px">The Lie</p>
+        <p style="font-weight:700;font-size:1.05rem">Statement ${lastSubmission.lieIndex + 1}</p>
+      </div>
+    </div>
   `;
 }
 
 function renderPlayerReveal(revealData) {
   const el = document.getElementById('player-reveal-content');
 
-  // Personalised feedback (no points shown)
   let bannerHTML = '';
   if (lastSubmission) {
     const whoOK = lastSubmission.guessedName === revealData.correctName;
     const lieOK = lastSubmission.lieIndex === revealData.lieIndex;
     if (whoOK && lieOK) {
-      bannerHTML = `<div class="result-banner both">🎯 You got both right!</div>`;
+      bannerHTML = `<div class="result-banner both">🎯 You got both right! +5 bonus</div>`;
     } else if (whoOK) {
-      bannerHTML = `<div class="result-banner who">👤 You got WHO right!</div>`;
+      bannerHTML = `<div class="result-banner who">👤 You got WHO right! +2</div>`;
     } else if (lieOK) {
-      bannerHTML = `<div class="result-banner lie">🔍 You got the LIE right!</div>`;
+      bannerHTML = `<div class="result-banner lie">🔍 You got the LIE right! +2</div>`;
     } else {
       bannerHTML = `<div class="result-banner none">💭 Not this time!</div>`;
     }
   }
 
-  // Statements with lie/truth revealed
   const stmts = revealData.statements.map((stmt, i) => {
     const isLie = i === revealData.lieIndex;
     return `
@@ -827,14 +948,14 @@ function renderPlayerReveal(revealData) {
   }).join('');
 
   el.innerHTML = `
-    <div class="card" style="margin-bottom:14px">
+    <div class="card" style="margin-bottom:12px">
       <p class="slide-counter">Round ${revealData.slideIndex + 1}</p>
       <h2 style="margin-bottom:4px">It was <span class="accent3">${escHtml(revealData.correctName)}</span>!</h2>
       <p class="dim" style="margin-bottom:14px">Lie: Statement ${revealData.lieIndex + 1}</p>
       ${bannerHTML}
     </div>
     <div class="card">
-      <h3 style="margin-bottom:12px">The Statements</h3>
+      <p class="section-label">The Statements</p>
       ${stmts}
     </div>
   `;
@@ -890,12 +1011,10 @@ async function renderAdminSlide() {
   const total = gameState.totalSlides;
 
   document.getElementById('admin-slide-counter').textContent = `Round ${slideNum} of ${total}`;
-  // Spoiler A fix: no answer in the title
   document.getElementById('admin-slide-title').textContent = `Round ${slideNum}`;
 
   const stmtsEl = document.getElementById('admin-statements');
   stmtsEl.innerHTML = '';
-  // Spoiler B fix: plain unlabelled cards, no is-lie/is-truth classes
   data.currentSlideStatements.forEach((stmt, i) => {
     const card = document.createElement('div');
     card.className = 'statement-card reveal-plain';
@@ -905,24 +1024,22 @@ async function renderAdminSlide() {
 }
 
 function updateAdminControls(phase) {
-  const btnOpen = document.getElementById('btn-open-voting');
-  const btnClose = document.getElementById('btn-close-voting');
+  const btnOpen   = document.getElementById('btn-open-voting');
+  const btnClose  = document.getElementById('btn-close-voting');
   const btnReveal = document.getElementById('btn-reveal-now');
 
-  btnOpen.disabled = phase !== 'lobby' && phase !== 'closed';
-  btnClose.disabled = phase !== 'voting';
+  btnOpen.disabled   = phase !== 'lobby' && phase !== 'closed';
+  btnClose.disabled  = phase !== 'voting';
   btnReveal.disabled = phase !== 'closed';
 
-  const tally = document.getElementById('admin-vote-tally');
+  const tally      = document.getElementById('admin-vote-tally');
   const tallyTitle = document.getElementById('admin-vote-tally-title');
 
   if (phase === 'voting') {
-    // Spoiler D fix: only show total count during voting, no name breakdown
     tally.style.display = '';
-    tallyTitle.innerHTML = `Votes: <span id="admin-vote-count">${gameState.voteCount || 0}</span> / ${gameState.totalSlides}`;
+    tallyTitle.innerHTML = `Votes in: <span id="admin-vote-count">${gameState.voteCount || 0}</span> / ${gameData ? gameData.players.length : gameState.totalSlides}`;
     document.getElementById('admin-name-tally').innerHTML = '';
   } else if (phase === 'closed') {
-    // After voting closes it's safe to show the per-name breakdown
     tally.style.display = '';
     tallyTitle.innerHTML = `Votes cast: <span id="admin-vote-count">${gameState.voteCount || 0}</span>`;
     fetchNameTally();
@@ -953,7 +1070,7 @@ async function fetchNameTally() {
             <div class="vote-bar-inner vote-bar-dim" style="width:${pct}%"></div>
           </div>
         </div>`;
-    }).join('') || '<p class="dim">No votes</p>';
+    }).join('') || '<p class="dim">No votes yet</p>';
 }
 
 function showWelcome() {
@@ -1032,23 +1149,10 @@ function buildRevealCard(data) {
   return div;
 }
 
-async function adminOpenVoting() {
-  await api('POST', '/api/admin/open-voting');
-}
-
-async function adminCloseVoting() {
-  await api('POST', '/api/admin/close-voting');
-}
-
-async function adminRevealNow() {
-  await api('POST', '/api/admin/reveal-current');
-  // UI updates via handleStateUpdate broadcast
-}
-
-async function adminNextRound() {
-  await api('POST', '/api/admin/next-round');
-  // UI updates via handleStateUpdate or handleLeaderboardUpdate broadcast
-}
+async function adminOpenVoting()  { await api('POST', '/api/admin/open-voting'); }
+async function adminCloseVoting() { await api('POST', '/api/admin/close-voting'); }
+async function adminRevealNow()   { await api('POST', '/api/admin/reveal-current'); }
+async function adminNextRound()   { await api('POST', '/api/admin/next-round'); }
 
 function renderAdminLeaderboard(data) {
   const el = document.getElementById('admin-leaderboard-content');
@@ -1065,7 +1169,8 @@ async function adminReset() {
   welcomeQrRendered = false;
   const stateRes = await fetch('/api/state');
   gameState = await stateRes.json();
-  renderAdminView();
+  document.getElementById('rules-player-count').textContent = gameData.players.length;
+  showScreen('screen-admin-rules');
 }
 
 // ============================================================
@@ -1075,11 +1180,13 @@ function renderLeaderboardHTML(data) {
   const { leaderboard, bestDetective, mostMysterious } = data;
   const ranks = ['🥇', '🥈', '🥉'];
   const rankClass = ['gold', 'silver', 'bronze'];
+  const rankRowClass = ['rank-1', 'rank-2', 'rank-3'];
 
   const rows = leaderboard.map((entry, i) => {
     const isBest = entry.name === bestDetective;
+    const rowCls = [rankRowClass[i], isBest ? 'highlight' : ''].filter(Boolean).join(' ');
     return `
-      <div class="leaderboard-row${isBest ? ' highlight' : ''}">
+      <div class="leaderboard-row ${rowCls}">
         <div class="leaderboard-rank ${rankClass[i] || ''}">${ranks[i] || (i + 1)}</div>
         <div class="leaderboard-name">${escHtml(entry.name)}${isBest ? ' 🕵️' : ''}</div>
         <div class="leaderboard-score">${entry.score}pts</div>
@@ -1087,7 +1194,7 @@ function renderLeaderboardHTML(data) {
   }).join('');
 
   const awards = `
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
       <div class="award-box" style="border-color:var(--accent2)">
         <div class="award-icon">🕵️</div>
         <div class="award-title">Best Detective</div>
@@ -1103,8 +1210,8 @@ function renderLeaderboardHTML(data) {
   `;
 
   const scoring = `
-    <p class="dim" style="font-size:0.8rem;margin-top:16px;text-align:center">
-      Scoring: Correct WHO = 2pts · Correct LIE = 2pts · Both correct = 5pts bonus
+    <p class="dim" style="font-size:0.78rem;margin-top:16px;text-align:center">
+      Correct WHO = 2pts &nbsp;·&nbsp; Correct LIE = 2pts &nbsp;·&nbsp; Both correct = 5pts bonus
     </p>`;
 
   return awards + rows + scoring;
@@ -1149,7 +1256,6 @@ function handleStateUpdate(newState) {
       document.getElementById('admin-reveal-view').style.display = 'none';
       renderAdminSlide();
       updateAdminControls(phase);
-      // Update vote count display during voting
       if (phase === 'voting') {
         const countEl = document.getElementById('admin-vote-count');
         if (countEl) countEl.textContent = newState.voteCount || 0;
