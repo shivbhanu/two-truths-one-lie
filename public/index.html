@@ -961,9 +961,10 @@ function showWelcome() {
   renderWelcomeQR();
 }
 
-function renderWelcomeQR() {
+async function renderWelcomeQR() {
   if (welcomeQrRendered) return;
-  const url = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
+  const res = await fetch('/api/server-info');
+  const { url } = await res.json();
   document.getElementById('welcome-qr-url').textContent = url;
   const el = document.getElementById('welcome-qr-code');
   try {
