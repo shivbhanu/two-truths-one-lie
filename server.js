@@ -233,10 +233,14 @@ app.post('/api/admin/next-round', requireAdmin, (req, res) => {
   if (state.currentSlide >= gameData.slides.length - 1) {
     state.phase = 'leaderboard';
     const scores = computeScores();
-    const mostMysterious = computeMostMysterious();
-    const maxScore = Math.max(...Object.values(scores), 0);
-    const bestDetective = Object.keys(scores).find(p => scores[p] === maxScore);
-    const leaderboard = Object.entries(scores)
+    const mostMysterious = computeMostMysterious(); // host eligible
+    const host = gameData.hostPlayer || null;
+    const votingScores = Object.fromEntries(
+      Object.entries(scores).filter(([name]) => name !== host)
+    );
+    const maxScore = Math.max(...Object.values(votingScores), 0);
+    const bestDetective = Object.keys(votingScores).find(p => votingScores[p] === maxScore);
+    const leaderboard = Object.entries(votingScores)
       .sort(([, a], [, b]) => b - a)
       .map(([name, score]) => ({ name, score }));
     broadcast({
