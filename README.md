@@ -17,19 +17,26 @@ A party game for team events. Each round, three statements about one person appe
 
 ### Create a Google Form
 
-Create a form with exactly these five short-answer questions (column order matters for the CSV export):
+**Settings to configure before adding questions:**
+
+| Where | Setting | Value |
+|---|---|---|
+| Settings → General | Collect email addresses | **Verified** |
+| Settings → General | Limit to 1 response | On |
+| Settings → Responses | See summary charts and text responses | **Off** |
+
+Verified email collection auto-captures the respondent's Oviva address — no name field needed. Player names are derived automatically: `shiv.singh@oviva.com` → **Shiv**.
+
+**Add exactly these 4 short-answer questions:**
 
 | # | Question |
 |---|---|
-| 1 | Your name |
-| 2 | Statement 1 |
-| 3 | Statement 2 |
-| 4 | Statement 3 |
-| 5 | Which statement is the lie? (enter 1, 2, or 3) |
+| 1 | Statement 1 |
+| 2 | Statement 2 |
+| 3 | Statement 3 |
+| 4 | Which statement is the lie? (enter 1, 2, or 3) |
 
-Share the form with everyone — including yourself as the host.
-
-> **Keep responses confidential.** In Google Forms go to **Settings → Responses** and turn off "See summary charts and text responses" so players can't view each other's answers before the game.
+Mark all four as required. Share the form link with everyone — including yourself as the host.
 
 ### Export to CSV
 
@@ -44,7 +51,7 @@ node scripts/convert-sheet.js responses.csv --host "Shiv" --password your-passwo
 
 | Flag | Default | Description |
 |---|---|---|
-| `--host` | *(none)* | Your name as entered in the form. Excluded from leaderboard scores but still eligible for Most Mysterious. |
+| `--host` | *(none)* | Your first name as it appears in game (e.g. `"Shiv"` for `shiv.singh@oviva.com`). Excluded from leaderboard scores but still eligible for Most Mysterious. |
 | `--password` | `bi2026` | Admin password used to log in on the night. |
 
 This overwrites `data/game.json`. Verify it looks right:

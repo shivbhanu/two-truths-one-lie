@@ -2,15 +2,18 @@
 /**
  * Convert a Google Sheets CSV export to data/game.json
  *
- * Sheet format (5 columns, header row required):
- *   Name | Statement 1 | Statement 2 | Statement 3 | Lie # (1/2/3)
+ * Form setup: enable "Collect email addresses" in Google Forms settings.
+ * Add exactly 4 short-answer questions (no name question needed):
+ *   Statement 1 | Statement 2 | Statement 3 | Which statement is the lie? (1, 2, or 3)
+ *
+ * Player names are derived from oviva emails: first.last@oviva.com → "First"
  *
  * Usage:
  *   node scripts/convert-sheet.js responses.csv
  *   node scripts/convert-sheet.js responses.csv --password mypassword --host "Shiv"
  *
- * --host  Name of the admin/host player. They have a round but won't vote
- *         and are excluded from the leaderboard scores.
+ * --host  First name of the host as it appears in game (e.g. "Shiv" for shiv.singh@oviva.com).
+ *         They have a round but won't vote and are excluded from the leaderboard scores.
  */
 
 const fs = require('fs');
@@ -19,9 +22,15 @@ const path = require('path');
 const args = process.argv.slice(2);
 if (args.length === 0 || args[0] === '--help') {
   console.log('Usage: node scripts/convert-sheet.js <csv-file> [--password <pw>] [--host <name>]');
-  console.log('\nSheet columns (with header row):');
-  console.log('  Name | Statement 1 | Statement 2 | Statement 3 | Lie # (1/2/3)');
+  console.log('\nExpected CSV (Google Forms with email collection enabled, 4 questions):');
+  console.log('  Timestamp | Email Address | Statement 1 | Statement 2 | Statement 3 | Lie # (1/2/3)');
+  console.log('\nPlayer names are derived from oviva emails: first.last@oviva.com → "First"');
   process.exit(args.length === 0 ? 1 : 0);
+}
+
+function nameFromEmail(email) {
+  const first = (email.split('@')[0] || '').split('.')[0];
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
 const csvPath = args[0];
@@ -70,17 +79,39 @@ if (rows.length < 2) {
   process.exit(1);
 }
 
-// Skip header row
+// Detect columns from header row
+const headers = rows[0].map(h => h.toLowerCase().trim());
+const emailCol = headers.findIndex(h => h.includes('email'));
+if (emailCol === -1) {
+  console.error('Error: no email column found. Enable "Collect email addresses" in Google Forms settings.');
+  process.exit(1);
+}
+// Remaining columns in order, skipping timestamp and email
+const questionCols = headers
+  .map((h, i) => i)
+  .filter(i => i !== emailCol && !headers[i].includes('timestamp'));
+if (questionCols.length < 4) {
+  console.error(`Error: expected 4 question columns (Statement 1–3 + Lie #), found ${questionCols.length}.`);
+  process.exit(1);
+}
+const [s1Col, s2Col, s3Col, lieCol] = questionCols;
+
 const dataRows = rows.slice(1);
 const slides = [];
 const players = [];
 const errors = [];
 
 dataRows.forEach((cols, i) => {
-  const rowNum = i + 2; // 1-based, accounting for header
-  const [name, s1, s2, s3, lieStr] = cols;
+  const rowNum = i + 2;
+  const email = (cols[emailCol] || '').trim();
+  const name = nameFromEmail(email);
+  const s1 = cols[s1Col];
+  const s2 = cols[s2Col];
+  const s3 = cols[s3Col];
+  const lieStr = cols[lieCol];
 
-  if (!name) { errors.push(`Row ${rowNum}: missing Name`); return; }
+  if (!email) { errors.push(`Row ${rowNum}: missing email`); return; }
+
   if (!s1 || !s2 || !s3) { errors.push(`Row ${rowNum} (${name}): missing one or more statements`); return; }
   if (!lieStr) { errors.push(`Row ${rowNum} (${name}): missing Lie # column`); return; }
 
