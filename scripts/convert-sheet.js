@@ -7,7 +7,10 @@
  *
  * Usage:
  *   node scripts/convert-sheet.js responses.csv
- *   node scripts/convert-sheet.js responses.csv --password mypassword
+ *   node scripts/convert-sheet.js responses.csv --password mypassword --host "Shiv"
+ *
+ * --host  Name of the admin/host player. They have a round but won't vote
+ *         and are excluded from the leaderboard scores.
  */
 
 const fs = require('fs');
@@ -15,15 +18,17 @@ const path = require('path');
 
 const args = process.argv.slice(2);
 if (args.length === 0 || args[0] === '--help') {
-  console.log('Usage: node scripts/convert-sheet.js <csv-file> [--password <admin-password>]');
+  console.log('Usage: node scripts/convert-sheet.js <csv-file> [--password <pw>] [--host <name>]');
   console.log('\nSheet columns (with header row):');
   console.log('  Name | Statement 1 | Statement 2 | Statement 3 | Lie # (1/2/3)');
   process.exit(args.length === 0 ? 1 : 0);
 }
 
 const csvPath = args[0];
-const pwIdx = args.indexOf('--password');
-const adminPassword = pwIdx !== -1 ? args[pwIdx + 1] : 'bi2026';
+const pwIdx   = args.indexOf('--password');
+const hostIdx = args.indexOf('--host');
+const adminPassword = pwIdx   !== -1 ? args[pwIdx + 1]   : 'bi2026';
+const hostPlayer    = hostIdx !== -1 ? args[hostIdx + 1] : null;
 
 if (!fs.existsSync(csvPath)) {
   console.error(`Error: file not found: ${csvPath}`);
@@ -101,6 +106,7 @@ if (errors.length > 0) {
 
 const output = {
   adminPassword,
+  ...(hostPlayer ? { hostPlayer } : {}),
   players,
   slides,
 };
@@ -110,5 +116,6 @@ fs.writeFileSync(outPath, JSON.stringify(output, null, 2));
 
 console.log(`✓ Converted ${slides.length} players → ${outPath}`);
 console.log(`  Admin password: ${adminPassword}`);
+if (hostPlayer) console.log(`  Host player: ${hostPlayer} (excluded from leaderboard scores)`);
 console.log('\nPlayers:');
 players.forEach((p, i) => console.log(`  ${i + 1}. ${p} (lie: statement ${slides[i].lieIndex + 1})`));

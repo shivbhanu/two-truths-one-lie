@@ -3,6 +3,18 @@ const http = require('http');
 const WebSocket = require('ws');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+const PORT = process.env.PORT || 3000;
+
+function getLocalIP() {
+  for (const iface of Object.values(os.networkInterfaces())) {
+    for (const alias of iface) {
+      if (alias.family === 'IPv4' && !alias.internal) return alias.address;
+    }
+  }
+  return 'localhost';
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -116,6 +128,10 @@ function requireAdmin(req, res, next) {
 
 // --- API Routes ---
 
+app.get('/api/server-info', (req, res) => {
+  res.json({ url: `http://${getLocalIP()}:${PORT}` });
+});
+
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
   if (password === gameData.adminPassword) {
@@ -217,10 +233,14 @@ app.post('/api/admin/next-round', requireAdmin, (req, res) => {
   if (state.currentSlide >= gameData.slides.length - 1) {
     state.phase = 'leaderboard';
     const scores = computeScores();
-    const mostMysterious = computeMostMysterious();
-    const maxScore = Math.max(...Object.values(scores), 0);
-    const bestDetective = Object.keys(scores).find(p => scores[p] === maxScore);
-    const leaderboard = Object.entries(scores)
+    const mostMysterious = computeMostMysterious(); // host eligible
+    const host = gameData.hostPlayer || null;
+    const votingScores = Object.fromEntries(
+      Object.entries(scores).filter(([name]) => name !== host)
+    );
+    const maxScore = Math.max(...Object.values(votingScores), 0);
+    const bestDetective = Object.keys(votingScores).find(p => votingScores[p] === maxScore);
+    const leaderboard = Object.entries(votingScores)
       .sort(([, a], [, b]) => b - a)
       .map(([name, score]) => ({ name, score }));
     broadcast({
@@ -249,7 +269,6 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'state', data: getPublicState() }));
 });
 
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Two Truths & One Lie running at http://localhost:${PORT}`);
   console.log(`Admin password: ${gameData.adminPassword}`);
