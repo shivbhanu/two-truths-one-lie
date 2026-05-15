@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Two Truths & One Lie</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #0f0f1a;
@@ -157,10 +158,13 @@
       min-height: 70px;
     }
     .statement-card.selected { border-color: var(--accent); background: #1f0a12; }
+    /* is-lie / is-truth only applied during reveal, not during voting */
     .statement-card.is-lie { border-color: var(--accent); background: #2a0a0a; }
     .statement-card.is-truth { border-color: var(--green); background: #0a1f0a; }
+    .statement-card.reveal-plain { cursor: default; }
     @media (hover: hover) {
       .statement-card:hover { border-color: var(--accent3); }
+      .statement-card.reveal-plain:hover { border-color: var(--border); }
     }
     .statement-label {
       font-size: 0.72rem;
@@ -316,6 +320,20 @@
     .award-title { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
     .award-name { font-size: 1.3rem; font-weight: 800; }
 
+    /* ===== PERSONAL RESULT BANNER ===== */
+    .result-banner {
+      padding: 14px 18px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+    }
+    .result-banner.both { background: #0a2a0a; border: 1px solid var(--green); color: var(--green); }
+    .result-banner.who { background: #0a1a2a; border: 1px solid var(--accent3); color: var(--accent3); }
+    .result-banner.lie { background: #1a0a20; border: 1px solid var(--accent2); color: var(--accent2); }
+    .result-banner.none { background: #2a0a0a; border: 1px solid var(--accent); color: var(--accent); }
+
     /* ===== STICKY SUBMIT BAR ===== */
     .submit-bar {
       position: sticky;
@@ -369,7 +387,7 @@
   </div>
   <div style="padding:20px;padding-bottom:0;flex:1;position:relative">
 
-    <!-- Lobby state -->
+    <!-- Lobby / waiting state -->
     <div id="player-lobby" style="display:none">
       <div class="card center" style="margin-top:60px;padding:40px">
         <div class="waiting-icon">🎮</div>
@@ -403,19 +421,16 @@
       <div class="card center" style="margin-top:60px;padding:40px">
         <div class="waiting-icon">✅</div>
         <h2>Vote Submitted!</h2>
-        <p class="dim" style="margin-top:8px">Waiting for the next round...</p>
+        <p class="dim" style="margin-top:8px">Waiting for the host to reveal...</p>
         <div class="gap"></div>
         <div id="player-submitted-summary" style="text-align:left;background:var(--surface2);border-radius:12px;padding:16px;margin-top:8px"></div>
       </div>
     </div>
 
-    <!-- Reveal phase -->
+    <!-- Reveal phase — shows the reveal card directly on phone -->
     <div id="player-reveal-wait" style="display:none">
-      <div class="card center" style="margin-top:60px;padding:40px">
-        <div class="waiting-icon">🔍</div>
-        <h2>Reveal Time!</h2>
-        <p class="dim" style="margin-top:8px">Watch the screen — the host is revealing answers!</p>
-      </div>
+      <div class="gap"></div>
+      <div id="player-reveal-content"></div>
     </div>
 
     <!-- Leaderboard -->
@@ -440,8 +455,18 @@
 
   <div style="padding:20px;flex:1;max-width:800px;width:100%;margin:0 auto">
 
-    <!-- Game rounds view -->
+    <!-- Game rounds view (lobby / voting / closed) -->
     <div id="admin-game-view">
+
+      <!-- QR code shown in lobby only -->
+      <div id="admin-qr-section" style="display:none;text-align:center;padding-bottom:24px">
+        <div class="card" style="display:inline-block;padding:20px;text-align:center">
+          <p style="margin-bottom:12px;font-weight:600;color:var(--accent3)">Players join at:</p>
+          <div id="admin-qr-code" style="margin-bottom:10px;line-height:0"></div>
+          <p id="admin-qr-url" style="font-family:monospace;font-size:0.95rem;color:var(--text)"></p>
+        </div>
+      </div>
+
       <p class="slide-counter" id="admin-slide-counter"></p>
       <h2 id="admin-slide-title" style="margin-bottom:16px"></h2>
 
@@ -451,25 +476,23 @@
       <div class="admin-controls" id="admin-controls">
         <button class="btn btn-success" id="btn-open-voting" onclick="adminOpenVoting()">Open Voting</button>
         <button class="btn btn-warning" id="btn-close-voting" onclick="adminCloseVoting()">Close Voting</button>
-        <button class="btn btn-info" id="btn-next-round" onclick="adminNextRound()">Next Round →</button>
+        <button class="btn btn-primary" id="btn-reveal-now" onclick="adminRevealNow()">Reveal Now 🔍</button>
       </div>
 
+      <!-- Vote count (voting: count only; closed: per-name bars) -->
       <div class="vote-tally" id="admin-vote-tally" style="display:none">
-        <h3>Live Vote Count: <span id="admin-vote-count">0</span> votes</h3>
+        <h3 id="admin-vote-tally-title">Votes: <span id="admin-vote-count">0</span></h3>
         <div class="gap-sm"></div>
         <div id="admin-name-tally"></div>
       </div>
     </div>
 
-    <!-- Reveal phase view -->
+    <!-- Reveal view (shown after admin clicks Reveal Now) -->
     <div id="admin-reveal-view" style="display:none">
-      <h2 style="margin-bottom:4px">Reveal Phase</h2>
-      <p class="dim" style="margin-bottom:20px">Step through each slide to reveal answers</p>
       <div id="admin-reveal-content"></div>
       <div class="gap"></div>
       <div class="admin-controls">
-        <button class="btn btn-primary" id="btn-reveal-next" onclick="adminRevealNext()">Reveal Next Slide</button>
-        <button class="btn btn-success" id="btn-show-leaderboard" onclick="adminShowLeaderboard()" style="display:none">Show Leaderboard</button>
+        <button class="btn btn-info" id="btn-next-round" onclick="adminNextRound()">Next Round →</button>
       </div>
     </div>
 
@@ -489,16 +512,14 @@
 let myRole = null;        // 'player' | 'admin'
 let myName = null;
 let adminToken = null;
-let gameData = null;      // players, totalSlides
-let gameState = null;     // phase, currentSlide, etc.
+let gameData = null;      // { players, totalSlides }
+let gameState = null;     // phase, currentSlide, totalSlides, voteCount, revealData?
 let ws = null;
 let selectedName = null;
 let selectedLie = null;
 let hasVotedThisRound = false;
 let lastSubmission = null; // { guessedName, lieIndex }
-let currentRevealData = null;
-let revealsCompleted = 0;
-let totalReveals = 0;
+let qrRendered = false;
 
 // ============================================================
 // WEBSOCKET
@@ -510,13 +531,8 @@ function connectWS() {
 
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    if (msg.type === 'state') {
-      handleStateUpdate(msg.data);
-    } else if (msg.type === 'reveal') {
-      handleRevealUpdate(msg.data);
-    } else if (msg.type === 'leaderboard') {
-      handleLeaderboardUpdate(msg.data);
-    }
+    if (msg.type === 'state') handleStateUpdate(msg.data);
+    else if (msg.type === 'leaderboard') handleLeaderboardUpdate(msg.data);
   };
 
   ws.onclose = () => setTimeout(connectWS, 2000);
@@ -590,10 +606,9 @@ async function adminLogin() {
     ]);
     gameState = await stateRes.json();
     const full = await fullRes.json();
-    gameData = { players: full.gameData.players, totalSlides: full.gameData.slides.length };
-    totalReveals = gameData.totalSlides;
+    gameData = { players: full.players, totalSlides: gameState.totalSlides };
     showScreen('screen-admin');
-    renderAdminView(full);
+    renderAdminView();
   } else {
     showLoginError('Wrong password');
   }
@@ -607,11 +622,6 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function showOnly(parent, id) {
-  parent.querySelectorAll(':scope > div[id]').forEach(el => el.style.display = 'none');
-  document.getElementById(id).style.display = '';
-}
-
 // ============================================================
 // PLAYER VIEW
 // ============================================================
@@ -620,8 +630,8 @@ function renderPlayerView() {
   const phase = gameState.phase;
   const badge = document.getElementById('player-badge');
 
-  const panelIds = ['player-lobby','player-voting','player-submitted','player-reveal-wait','player-leaderboard'];
-  panelIds.forEach(id => document.getElementById(id).style.display = 'none');
+  ['player-lobby','player-voting','player-submitted','player-reveal-wait','player-leaderboard']
+    .forEach(id => document.getElementById(id).style.display = 'none');
 
   if (phase === 'leaderboard') {
     badge.className = 'badge badge-reveal';
@@ -630,10 +640,11 @@ function renderPlayerView() {
     return;
   }
 
-  if (phase === 'reveal') {
+  if (phase === 'revealing') {
     badge.className = 'badge badge-reveal';
     badge.textContent = 'Reveal!';
     document.getElementById('player-reveal-wait').style.display = '';
+    if (gameState.revealData) renderPlayerReveal(gameState.revealData);
     return;
   }
 
@@ -740,6 +751,69 @@ function renderSubmittedSummary() {
   `;
 }
 
+function renderPlayerReveal(revealData) {
+  const el = document.getElementById('player-reveal-content');
+
+  // Personalised feedback (no points shown)
+  let bannerHTML = '';
+  if (lastSubmission) {
+    const whoOK = lastSubmission.guessedName === revealData.correctName;
+    const lieOK = lastSubmission.lieIndex === revealData.lieIndex;
+    if (whoOK && lieOK) {
+      bannerHTML = `<div class="result-banner both">🎯 You got both right!</div>`;
+    } else if (whoOK) {
+      bannerHTML = `<div class="result-banner who">👤 You got WHO right!</div>`;
+    } else if (lieOK) {
+      bannerHTML = `<div class="result-banner lie">🔍 You got the LIE right!</div>`;
+    } else {
+      bannerHTML = `<div class="result-banner none">💭 Not this time!</div>`;
+    }
+  }
+
+  // Statements with lie/truth revealed
+  const stmts = revealData.statements.map((stmt, i) => {
+    const isLie = i === revealData.lieIndex;
+    return `
+      <div class="statement-card reveal-plain ${isLie ? 'is-lie' : 'is-truth'}">
+        <div class="statement-label">Statement ${i + 1} — ${isLie ? '🔴 LIE' : '✅ TRUTH'}</div>
+        <div class="statement-text">${escHtml(stmt)}</div>
+      </div>`;
+  }).join('');
+
+  // WHO vote bars
+  const nameBars = (gameData ? gameData.players : Object.keys(revealData.nameCounts))
+    .map(p => {
+      const count = revealData.nameCounts[p] || 0;
+      const pct = revealData.totalVotes > 0 ? Math.round(count / revealData.totalVotes * 100) : 0;
+      const isCorrect = p === revealData.correctName;
+      if (count === 0) return '';
+      return `
+        <div class="vote-bar-wrap">
+          <div class="vote-bar-label">
+            <span>${escHtml(p)}${isCorrect ? ' 👑' : ''}</span>
+            <span>${count} vote${count !== 1 ? 's' : ''} (${pct}%)</span>
+          </div>
+          <div class="vote-bar-outer">
+            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:14px">
+      <p class="slide-counter">Round ${revealData.slideIndex + 1}</p>
+      <h2 style="margin-bottom:4px">It was <span class="accent3">${escHtml(revealData.correctName)}</span>!</h2>
+      <p class="dim" style="margin-bottom:14px">Lie: Statement ${revealData.lieIndex + 1}</p>
+      ${bannerHTML}
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3 style="margin-bottom:12px">The Statements</h3>
+      ${stmts}
+    </div>
+    ${nameBars ? `<div class="card"><h3 style="margin-bottom:12px">WHO guesses</h3>${nameBars}</div>` : ''}
+  `;
+}
+
 function renderPlayerLeaderboard(data) {
   const el = document.getElementById('player-leaderboard-content');
   el.innerHTML = renderLeaderboardHTML(data);
@@ -748,8 +822,8 @@ function renderPlayerLeaderboard(data) {
 // ============================================================
 // ADMIN VIEW
 // ============================================================
-function renderAdminView(full) {
-  const phase = full ? full.state.phase : gameState.phase;
+function renderAdminView() {
+  const phase = gameState.phase;
   const badge = document.getElementById('admin-phase-badge');
 
   ['admin-game-view','admin-reveal-view','admin-leaderboard-view'].forEach(id => {
@@ -757,121 +831,144 @@ function renderAdminView(full) {
   });
 
   if (phase === 'leaderboard') {
-    badge.className = 'badge badge-reveal'; badge.textContent = 'Leaderboard';
+    badge.className = 'badge badge-reveal';
+    badge.textContent = 'Leaderboard';
     document.getElementById('admin-leaderboard-view').style.display = '';
-    if (full) renderAdminLeaderboard(full);
     return;
   }
 
-  if (phase === 'reveal') {
-    badge.className = 'badge badge-reveal'; badge.textContent = 'Reveal';
+  if (phase === 'revealing') {
+    badge.className = 'badge badge-reveal';
+    badge.textContent = 'Revealing';
     document.getElementById('admin-reveal-view').style.display = '';
+    if (gameState.revealData) renderAdminRevealCard(gameState.revealData);
     updateRevealControls();
     return;
   }
 
-  badge.className = phase === 'voting' ? 'badge badge-voting' : 'badge badge-lobby';
-  badge.textContent = phase === 'voting' ? 'Voting Open' : phase === 'closed' ? 'Voting Closed' : 'Lobby';
+  badge.className = phase === 'voting' ? 'badge badge-voting' :
+                    phase === 'closed' ? 'badge badge-closed' : 'badge badge-lobby';
+  badge.textContent = phase === 'voting' ? 'Voting Open' :
+                      phase === 'closed' ? 'Voting Closed' : 'Lobby';
 
   document.getElementById('admin-game-view').style.display = '';
-  renderAdminSlide(full);
+  renderAdminSlide();
   updateAdminControls(phase);
 }
 
-async function renderAdminSlide(full) {
-  let slides, currentSlide;
-  if (full) {
-    slides = full.gameData.slides;
-    currentSlide = full.state.currentSlide;
-  } else {
-    const res = await fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } });
-    const data = await res.json();
-    slides = data.gameData.slides;
-    currentSlide = data.state.currentSlide;
-  }
+async function renderAdminSlide() {
+  const res = await fetch('/api/game-data');
+  const data = await res.json();
 
-  const slide = slides[currentSlide];
-  document.getElementById('admin-slide-counter').textContent =
-    `Round ${currentSlide + 1} of ${slides.length}`;
-  document.getElementById('admin-slide-title').textContent =
-    `Who does this belong to? (Answer: ${slide.correctName})`;
+  const slideNum = gameState.currentSlide + 1;
+  const total = gameState.totalSlides;
+
+  document.getElementById('admin-slide-counter').textContent = `Round ${slideNum} of ${total}`;
+  // Spoiler A fix: no answer in the title
+  document.getElementById('admin-slide-title').textContent = `Round ${slideNum}`;
 
   const stmtsEl = document.getElementById('admin-statements');
   stmtsEl.innerHTML = '';
-  slide.statements.forEach((stmt, i) => {
-    const isLie = i === slide.lieIndex;
+  // Spoiler B fix: plain unlabelled cards, no is-lie/is-truth classes
+  data.currentSlideStatements.forEach((stmt, i) => {
     const card = document.createElement('div');
-    card.className = 'statement-card' + (isLie ? ' is-lie' : ' is-truth');
-    card.innerHTML = `
-      <div class="statement-label">Statement ${i + 1} — ${isLie ? '🔴 LIE' : '✅ TRUTH'}</div>
-      <div class="statement-text">${escHtml(stmt)}</div>
-    `;
+    card.className = 'statement-card reveal-plain';
+    card.innerHTML = `<div class="statement-label">Statement ${i + 1}</div><div class="statement-text">${escHtml(stmt)}</div>`;
     stmtsEl.appendChild(card);
   });
-
-  document.getElementById('admin-vote-tally').style.display = 'none';
 }
 
 function updateAdminControls(phase) {
   const btnOpen = document.getElementById('btn-open-voting');
   const btnClose = document.getElementById('btn-close-voting');
-  const btnNext = document.getElementById('btn-next-round');
+  const btnReveal = document.getElementById('btn-reveal-now');
+
   btnOpen.disabled = phase !== 'lobby' && phase !== 'closed';
   btnClose.disabled = phase !== 'voting';
-  btnNext.disabled = phase !== 'closed';
+  btnReveal.disabled = phase !== 'closed';
+
+  const tally = document.getElementById('admin-vote-tally');
+  const tallyTitle = document.getElementById('admin-vote-tally-title');
+
+  // QR code visible only in lobby
+  document.getElementById('admin-qr-section').style.display = phase === 'lobby' ? '' : 'none';
+  if (phase === 'lobby') renderQRCode();
 
   if (phase === 'voting') {
-    document.getElementById('admin-vote-tally').style.display = '';
+    // Spoiler D fix: only show total count during voting, no name breakdown
+    tally.style.display = '';
+    tallyTitle.innerHTML = `Votes: <span id="admin-vote-count">${gameState.voteCount || 0}</span> / ${gameState.totalSlides}`;
+    document.getElementById('admin-name-tally').innerHTML = '';
+  } else if (phase === 'closed') {
+    // After voting closes it's safe to show the per-name breakdown
+    tally.style.display = '';
+    tallyTitle.innerHTML = `Votes cast: <span id="admin-vote-count">${gameState.voteCount || 0}</span>`;
+    fetchNameTally();
+  } else {
+    tally.style.display = 'none';
   }
 }
 
-async function adminOpenVoting() {
-  await api('POST', '/api/admin/open-voting');
+async function fetchNameTally() {
+  const res = await fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } });
+  const data = await res.json();
+  const slideVotes = data.state.votes[data.state.currentSlide] || {};
+  const allVotes = Object.values(slideVotes);
+  const nameCounts = {};
+  data.players.forEach(p => { nameCounts[p] = 0; });
+  allVotes.forEach(v => { nameCounts[v.guessedName] = (nameCounts[v.guessedName] || 0) + 1; });
+
+  const tallyEl = document.getElementById('admin-name-tally');
+  tallyEl.innerHTML = Object.entries(nameCounts)
+    .filter(([, c]) => c > 0)
+    .sort(([, a], [, b]) => b - a)
+    .map(([name, c]) => {
+      const pct = allVotes.length > 0 ? Math.round(c / allVotes.length * 100) : 0;
+      return `
+        <div class="vote-bar-wrap">
+          <div class="vote-bar-label"><span>${escHtml(name)}</span><span>${c} (${pct}%)</span></div>
+          <div class="vote-bar-outer">
+            <div class="vote-bar-inner vote-bar-dim" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('') || '<p class="dim">No votes</p>';
 }
 
-async function adminCloseVoting() {
-  await api('POST', '/api/admin/close-voting');
-}
-
-async function adminNextRound() {
-  const res = await api('POST', '/api/admin/next-round');
-  if (res.phase === 'reveal') {
-    revealsCompleted = 0;
-    totalReveals = gameData.totalSlides;
-    gameState.phase = 'reveal';
-    renderAdminView(null);
+function renderQRCode() {
+  if (qrRendered) return;
+  const url = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
+  document.getElementById('admin-qr-url').textContent = url;
+  const el = document.getElementById('admin-qr-code');
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    el.innerHTML = qr.createImgTag(4, 8);
+    qrRendered = true;
+  } catch(e) {
+    el.textContent = url;
   }
 }
 
 function updateRevealControls() {
-  const btnNext = document.getElementById('btn-reveal-next');
-  const btnLeaderboard = document.getElementById('btn-show-leaderboard');
-  const allDone = revealsCompleted >= totalReveals;
-  btnNext.style.display = allDone ? 'none' : '';
-  btnLeaderboard.style.display = allDone ? '' : 'none';
+  const btn = document.getElementById('btn-next-round');
+  const isLast = gameState.currentSlide >= gameState.totalSlides - 1;
+  btn.textContent = isLast ? 'See Scores 🏆' : 'Next Round →';
+  btn.className = isLast ? 'btn btn-success' : 'btn btn-info';
 }
 
-async function adminRevealNext() {
-  const res = await api('POST', '/api/admin/reveal-next');
-  if (res.ok) {
-    revealsCompleted++;
-    renderAdminRevealCard(res.revealData, true);
-    updateRevealControls();
-  }
-}
-
-function renderAdminRevealCard(data, prepend) {
+function renderAdminRevealCard(data) {
   const container = document.getElementById('admin-reveal-content');
-  const card = buildRevealCard(data);
-  if (prepend) container.insertBefore(card, container.firstChild);
-  else container.appendChild(card);
+  container.innerHTML = '';
+  container.appendChild(buildRevealCard(data));
 }
 
 function buildRevealCard(data) {
   const div = document.createElement('div');
   div.className = 'card';
   div.style.marginBottom = '16px';
-  const nameBars = gameData.players
+
+  const nameBars = (gameData ? gameData.players : Object.keys(data.nameCounts))
     .map(p => {
       const count = data.nameCounts[p] || 0;
       const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
@@ -883,33 +980,32 @@ function buildRevealCard(data) {
             <span>${count} vote${count !== 1 ? 's' : ''} (${pct}%)</span>
           </div>
           <div class="vote-bar-outer">
-            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}"
-                 style="width:${pct}%"></div>
+            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}" style="width:${pct}%"></div>
           </div>
         </div>`;
     }).join('');
 
   const lieStatements = [0,1,2].map(i => {
+    const stmt = data.statements[i];
     const count = data.lieIndexCounts[i] || 0;
     const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
     const isCorrect = i === data.lieIndex;
     return `
       <div class="vote-bar-wrap">
         <div class="vote-bar-label">
-          <span>Statement ${i+1}${isCorrect ? ' 🎯 (LIE)' : ''}</span>
+          <span>Stmt ${i+1}${isCorrect ? ' 🎯' : ''}: ${escHtml(stmt.length > 45 ? stmt.slice(0,45)+'…' : stmt)}</span>
           <span>${count} (${pct}%)</span>
         </div>
         <div class="vote-bar-outer">
-          <div class="vote-bar-inner ${isCorrect ? 'vote-bar-accent' : 'vote-bar-dim'}"
-               style="width:${pct}%"></div>
+          <div class="vote-bar-inner ${isCorrect ? 'vote-bar-accent' : 'vote-bar-dim'}" style="width:${pct}%"></div>
         </div>
       </div>`;
   }).join('');
 
   div.innerHTML = `
-    <h3 style="margin-bottom:4px">Round ${data.slideIndex + 1}</h3>
-    <p style="margin-bottom:16px"><strong class="accent3">Answer: ${escHtml(data.correctName)}</strong>
-      &nbsp;•&nbsp; <strong class="accent">Lie: Statement ${data.lieIndex + 1}</strong></p>
+    <p class="slide-counter">Round ${data.slideIndex + 1}</p>
+    <h2 style="margin-bottom:4px">It was <span class="accent3">${escHtml(data.correctName)}</span>!</h2>
+    <p style="margin-bottom:16px"><strong class="accent">Lie: Statement ${data.lieIndex + 1}</strong></p>
     <div class="reveal-stats">
       <div class="stat-box">
         <div class="stat-num green">${data.whoCorrectCount}</div>
@@ -928,13 +1024,22 @@ function buildRevealCard(data) {
   return div;
 }
 
-async function adminShowLeaderboard() {
-  const res = await api('POST', '/api/admin/show-leaderboard');
-  if (res.ok) {
-    document.getElementById('admin-reveal-view').style.display = 'none';
-    document.getElementById('admin-leaderboard-view').style.display = '';
-    renderAdminLeaderboard({ scores: Object.fromEntries(res.leaderboard.map(r => [r.name, r.score])), ...res });
-  }
+async function adminOpenVoting() {
+  await api('POST', '/api/admin/open-voting');
+}
+
+async function adminCloseVoting() {
+  await api('POST', '/api/admin/close-voting');
+}
+
+async function adminRevealNow() {
+  await api('POST', '/api/admin/reveal-current');
+  // UI updates via handleStateUpdate broadcast
+}
+
+async function adminNextRound() {
+  await api('POST', '/api/admin/next-round');
+  // UI updates via handleStateUpdate or handleLeaderboardUpdate broadcast
 }
 
 function renderAdminLeaderboard(data) {
@@ -949,10 +1054,10 @@ async function adminReset() {
   lastSubmission = null;
   selectedName = null;
   selectedLie = null;
-  revealsCompleted = 0;
+  qrRendered = false;
   const stateRes = await fetch('/api/state');
   gameState = await stateRes.json();
-  renderAdminView(null);
+  renderAdminView();
 }
 
 // ============================================================
@@ -1014,65 +1119,35 @@ function handleStateUpdate(newState) {
   if (myRole === 'player') {
     renderPlayerView();
   } else if (myRole === 'admin') {
-    // Update badge and controls
-    const badge = document.getElementById('admin-phase-badge');
     const phase = newState.phase;
-    badge.className = phase === 'voting' ? 'badge badge-voting' :
-                      phase === 'reveal' ? 'badge badge-reveal' :
-                      phase === 'closed' ? 'badge badge-closed' : 'badge badge-lobby';
-    badge.textContent = phase === 'voting' ? 'Voting Open' :
-                        phase === 'reveal' ? 'Reveal' :
-                        phase === 'closed' ? 'Voting Closed' :
+    const badge = document.getElementById('admin-phase-badge');
+    badge.className = phase === 'voting'    ? 'badge badge-voting' :
+                      phase === 'revealing' ? 'badge badge-reveal' :
+                      phase === 'closed'    ? 'badge badge-closed' : 'badge badge-lobby';
+    badge.textContent = phase === 'voting'    ? 'Voting Open' :
+                        phase === 'revealing' ? 'Revealing' :
+                        phase === 'closed'    ? 'Voting Closed' :
                         phase === 'leaderboard' ? 'Leaderboard' : 'Lobby';
 
-    if (phase === 'reveal') {
+    if (phase === 'revealing') {
       document.getElementById('admin-game-view').style.display = 'none';
       document.getElementById('admin-reveal-view').style.display = '';
+      if (newState.revealData) renderAdminRevealCard(newState.revealData);
       updateRevealControls();
-    } else if (phase !== 'leaderboard') {
-      renderAdminSlide(null);
+    } else if (phase === 'leaderboard') {
+      // handled by leaderboard broadcast
+    } else {
+      document.getElementById('admin-game-view').style.display = '';
+      document.getElementById('admin-reveal-view').style.display = 'none';
+      renderAdminSlide();
       updateAdminControls(phase);
-    }
-
-    if (phase === 'voting') {
-      updateVoteTally(newState.voteCount);
+      // Update vote count display during voting
+      if (phase === 'voting') {
+        const countEl = document.getElementById('admin-vote-count');
+        if (countEl) countEl.textContent = newState.voteCount || 0;
+      }
     }
   }
-}
-
-async function updateVoteTally(count) {
-  document.getElementById('admin-vote-count').textContent = count;
-  const tally = document.getElementById('admin-vote-tally');
-  tally.style.display = '';
-
-  // Fetch live name breakdown for admin
-  const res = await fetch('/api/admin/full-state', { headers: { 'x-admin-token': adminToken } });
-  const data = await res.json();
-  const slideVotes = data.state.votes[data.state.currentSlide] || {};
-  const allVotes = Object.values(slideVotes);
-  const nameCounts = {};
-  data.gameData.players.forEach(p => { nameCounts[p] = 0; });
-  allVotes.forEach(v => { nameCounts[v.guessedName] = (nameCounts[v.guessedName] || 0) + 1; });
-
-  const tallyEl = document.getElementById('admin-name-tally');
-  tallyEl.innerHTML = Object.entries(nameCounts)
-    .filter(([, c]) => c > 0)
-    .sort(([, a], [, b]) => b - a)
-    .map(([name, c]) => {
-      const pct = allVotes.length > 0 ? Math.round(c / allVotes.length * 100) : 0;
-      return `
-        <div class="vote-bar-wrap">
-          <div class="vote-bar-label"><span>${escHtml(name)}</span><span>${c} (${pct}%)</span></div>
-          <div class="vote-bar-outer">
-            <div class="vote-bar-inner vote-bar-dim" style="width:${pct}%"></div>
-          </div>
-        </div>`;
-    }).join('') || '<p class="dim">No votes yet</p>';
-}
-
-function handleRevealUpdate(data) {
-  if (myRole === 'player') return; // players don't see this detail
-  // Already handled by adminRevealNext for admin; broadcast is for admin screen only
 }
 
 function handleLeaderboardUpdate(data) {
@@ -1080,6 +1155,15 @@ function handleLeaderboardUpdate(data) {
   if (myRole === 'player') {
     renderPlayerView();
     renderPlayerLeaderboard(data);
+  } else if (myRole === 'admin') {
+    const badge = document.getElementById('admin-phase-badge');
+    badge.className = 'badge badge-reveal';
+    badge.textContent = 'Leaderboard';
+    ['admin-game-view','admin-reveal-view'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('admin-leaderboard-view').style.display = '';
+    renderAdminLeaderboard(data);
   }
 }
 

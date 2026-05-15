@@ -11,16 +11,13 @@ const wss = new WebSocket.Server({ server });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Load game data
 const gameData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'game.json'), 'utf8'));
 
 // Game state
 const state = {
-  phase: 'lobby',        // lobby | voting | closed | reveal | leaderboard
-  currentSlide: 0,       // 0-indexed, current active slide
-  currentRevealSlide: 0, // 0-indexed, during reveal phase
-  votes: {},             // { [slideIndex]: { [voterName]: { guessedName, lieIndex } } }
-  revealedSlides: [],    // slides that have been revealed
+  phase: 'lobby',  // lobby | voting | closed | revealing | leaderboard
+  currentSlide: 0,
+  votes: {},       // { [slideIndex]: { [voterName]: { voter, guessedName, lieIndex } } }
 };
 
 function broadcast(data) {
@@ -33,16 +30,18 @@ function broadcast(data) {
 }
 
 function getPublicState() {
-  return {
+  const pub = {
     phase: state.phase,
     currentSlide: state.currentSlide,
-    currentRevealSlide: state.currentRevealSlide,
     totalSlides: gameData.slides.length,
-    revealedSlides: state.revealedSlides,
     voteCount: state.votes[state.currentSlide]
       ? Object.keys(state.votes[state.currentSlide]).length
       : 0,
   };
+  if (state.phase === 'revealing') {
+    pub.revealData = getRevealData(state.currentSlide);
+  }
+  return pub;
 }
 
 function computeScores() {
@@ -67,7 +66,6 @@ function computeScores() {
 }
 
 function computeMostMysterious() {
-  // Person who fooled the most people (most wrong WHO guesses about them)
   const fooled = {};
   gameData.players.forEach(p => { fooled[p] = 0; });
 
@@ -110,7 +108,6 @@ function getRevealData(slideIndex) {
   };
 }
 
-// Admin auth middleware
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (token === gameData.adminPassword) return next();
@@ -140,16 +137,16 @@ app.get('/api/game-data', (req, res) => {
   });
 });
 
+// Spoiler C fix: gameData (with answers) is no longer sent; only players list is included
 app.get('/api/admin/full-state', requireAdmin, (req, res) => {
   res.json({
     state,
-    gameData,
+    players: gameData.players,
     scores: computeScores(),
     mostMysterious: computeMostMysterious(),
   });
 });
 
-// Check if a player has voted on the current slide
 app.get('/api/voted', (req, res) => {
   const { name } = req.query;
   const slideVotes = state.votes[state.currentSlide] || {};
@@ -177,12 +174,12 @@ app.post('/api/vote', (req, res) => {
   }
 
   state.votes[state.currentSlide][voterName] = { voter: voterName, guessedName, lieIndex: parseInt(lieIndex) };
-
   broadcast({ type: 'state', data: getPublicState() });
   res.json({ ok: true });
 });
 
 // Admin controls
+
 app.post('/api/admin/open-voting', requireAdmin, (req, res) => {
   if (state.phase !== 'lobby' && state.phase !== 'closed') {
     return res.status(400).json({ error: 'Invalid phase' });
@@ -201,66 +198,53 @@ app.post('/api/admin/close-voting', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/admin/next-round', requireAdmin, (req, res) => {
+// Reveal the current round immediately — replaces the old batch reveal flow
+app.post('/api/admin/reveal-current', requireAdmin, (req, res) => {
   if (state.phase !== 'closed') {
     return res.status(400).json({ error: 'Must close voting first' });
   }
+  state.phase = 'revealing';
+  // revealData is included in getPublicState() when phase is 'revealing'
+  broadcast({ type: 'state', data: getPublicState() });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/next-round', requireAdmin, (req, res) => {
+  if (state.phase !== 'revealing') {
+    return res.status(400).json({ error: 'Must reveal current round first' });
+  }
+
   if (state.currentSlide >= gameData.slides.length - 1) {
-    // All rounds done — enter reveal phase
-    state.phase = 'reveal';
-    state.currentRevealSlide = 0;
+    state.phase = 'leaderboard';
+    const scores = computeScores();
+    const mostMysterious = computeMostMysterious();
+    const maxScore = Math.max(...Object.values(scores), 0);
+    const bestDetective = Object.keys(scores).find(p => scores[p] === maxScore);
+    const leaderboard = Object.entries(scores)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, score]) => ({ name, score }));
+    broadcast({
+      type: 'leaderboard',
+      data: { leaderboard, bestDetective, mostMysterious, publicState: getPublicState() },
+    });
   } else {
     state.currentSlide++;
     state.phase = 'lobby';
+    broadcast({ type: 'state', data: getPublicState() });
   }
-  broadcast({ type: 'state', data: getPublicState() });
+
   res.json({ ok: true, phase: state.phase });
-});
-
-app.post('/api/admin/reveal-next', requireAdmin, (req, res) => {
-  if (state.phase !== 'reveal') {
-    return res.status(400).json({ error: 'Not in reveal phase' });
-  }
-
-  const revealData = getRevealData(state.currentRevealSlide);
-  state.revealedSlides.push(state.currentRevealSlide);
-
-  if (state.currentRevealSlide < gameData.slides.length - 1) {
-    state.currentRevealSlide++;
-  }
-
-  broadcast({ type: 'reveal', data: { ...revealData, publicState: getPublicState() } });
-  res.json({ ok: true, revealData });
-});
-
-app.post('/api/admin/show-leaderboard', requireAdmin, (req, res) => {
-  state.phase = 'leaderboard';
-  const scores = computeScores();
-  const mostMysterious = computeMostMysterious();
-  const maxScore = Math.max(...Object.values(scores));
-  const bestDetective = Object.keys(scores).find(p => scores[p] === maxScore);
-  const leaderboard = Object.entries(scores)
-    .sort(([, a], [, b]) => b - a)
-    .map(([name, score]) => ({ name, score }));
-
-  broadcast({
-    type: 'leaderboard',
-    data: { leaderboard, bestDetective, mostMysterious, publicState: getPublicState() },
-  });
-  res.json({ ok: true, leaderboard, bestDetective, mostMysterious });
 });
 
 app.post('/api/admin/reset', requireAdmin, (req, res) => {
   state.phase = 'lobby';
   state.currentSlide = 0;
-  state.currentRevealSlide = 0;
   state.votes = {};
-  state.revealedSlides = [];
   broadcast({ type: 'state', data: getPublicState() });
   res.json({ ok: true });
 });
 
-// WebSocket connection
+// WebSocket: send current state on connect so late joiners/refreshers sync up
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'state', data: getPublicState() }));
 });
