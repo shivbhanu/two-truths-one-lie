@@ -379,6 +379,56 @@
   </div>
 </div>
 
+<!-- ===================== ADMIN RULES SCREEN ===================== -->
+<div id="screen-admin-rules" class="screen center">
+  <div style="text-align:center;padding:20px;max-width:760px;width:100%">
+    <p style="font-size:0.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">How to Play</p>
+    <h1 style="margin-bottom:32px">Two Truths <span class="accent">&amp; One Lie</span></h1>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;text-align:left">
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:12px">📖</div>
+        <h3 style="margin-bottom:8px">Read</h3>
+        <p class="dim" style="font-size:0.95rem;line-height:1.6">3 statements appear on screen — 2 are true, 1 is a lie.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:12px">🗳️</div>
+        <h3 style="margin-bottom:8px">Vote on Your Phone</h3>
+        <p class="dim" style="font-size:0.95rem;line-height:1.6">Guess <strong style="color:var(--text)">WHO</strong> the statements belong to, and <strong style="color:var(--text)">which one is the lie</strong>.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:2rem;margin-bottom:12px">🏆</div>
+        <h3 style="margin-bottom:8px">Score Points</h3>
+        <p class="dim" style="font-size:0.95rem;line-height:1.6">Correct WHO <span class="accent2">+2</span> &nbsp;·&nbsp; Correct LIE <span class="accent2">+2</span> &nbsp;·&nbsp; Both right <span class="green">+5 bonus</span></p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px">
+      <div class="pill">🕵️ <strong>Best Detective</strong> — most correct answers</div>
+      <div class="pill">🎭 <strong>Most Mysterious</strong> — fooled the most people</div>
+    </div>
+
+    <p class="dim" style="margin-bottom:32px;font-size:1rem">
+      <span id="rules-player-count" style="color:var(--text);font-weight:700"></span> players &nbsp;·&nbsp; one round each
+    </p>
+
+    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 48px" onclick="showWelcome()">Got it — Let's Play! →</button>
+  </div>
+</div>
+
+<!-- ===================== ADMIN WELCOME SCREEN ===================== -->
+<div id="screen-admin-welcome" class="screen center">
+  <div style="text-align:center;padding:20px;max-width:640px;width:100%">
+    <p style="font-size:0.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px">Get Ready to Play</p>
+    <h1 style="margin-bottom:4px">Two Truths</h1>
+    <h1 style="margin-bottom:36px"><span class="accent">&amp; One Lie</span></h1>
+    <div id="welcome-qr-code" style="display:inline-block;background:white;padding:20px;border-radius:20px;margin-bottom:24px;line-height:0"></div>
+    <p id="welcome-qr-url" style="font-family:monospace;font-size:1.3rem;font-weight:700;color:var(--accent3);margin-bottom:16px;word-break:break-all;padding:0 20px"></p>
+    <p class="dim" style="margin-bottom:40px;font-size:1rem">Scan the code or visit the URL on your phone</p>
+    <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 48px" onclick="startGame()">Start Round 1 →</button>
+  </div>
+</div>
+
 <!-- ===================== PLAYER SCREEN ===================== -->
 <div id="screen-player" class="screen" style="flex-direction:column;padding:0">
   <div class="app-header">
@@ -458,15 +508,6 @@
     <!-- Game rounds view (lobby / voting / closed) -->
     <div id="admin-game-view">
 
-      <!-- QR code shown in lobby only -->
-      <div id="admin-qr-section" style="display:none;text-align:center;padding-bottom:24px">
-        <div class="card" style="display:inline-block;padding:20px;text-align:center">
-          <p style="margin-bottom:12px;font-weight:600;color:var(--accent3)">Players join at:</p>
-          <div id="admin-qr-code" style="margin-bottom:10px;line-height:0"></div>
-          <p id="admin-qr-url" style="font-family:monospace;font-size:0.95rem;color:var(--text)"></p>
-        </div>
-      </div>
-
       <p class="slide-counter" id="admin-slide-counter"></p>
       <h2 id="admin-slide-title" style="margin-bottom:16px"></h2>
 
@@ -519,7 +560,7 @@ let selectedName = null;
 let selectedLie = null;
 let hasVotedThisRound = false;
 let lastSubmission = null; // { guessedName, lieIndex }
-let qrRendered = false;
+let welcomeQrRendered = false;
 
 // ============================================================
 // WEBSOCKET
@@ -607,8 +648,13 @@ async function adminLogin() {
     gameState = await stateRes.json();
     const full = await fullRes.json();
     gameData = { players: full.players, totalSlides: gameState.totalSlides };
-    showScreen('screen-admin');
-    renderAdminView();
+    if (gameState.phase === 'lobby' && gameState.currentSlide === 0) {
+      document.getElementById('rules-player-count').textContent = gameData.players.length;
+      showScreen('screen-admin-rules');
+    } else {
+      showScreen('screen-admin');
+      renderAdminView();
+    }
   } else {
     showLoginError('Wrong password');
   }
@@ -780,25 +826,6 @@ function renderPlayerReveal(revealData) {
       </div>`;
   }).join('');
 
-  // WHO vote bars
-  const nameBars = (gameData ? gameData.players : Object.keys(revealData.nameCounts))
-    .map(p => {
-      const count = revealData.nameCounts[p] || 0;
-      const pct = revealData.totalVotes > 0 ? Math.round(count / revealData.totalVotes * 100) : 0;
-      const isCorrect = p === revealData.correctName;
-      if (count === 0) return '';
-      return `
-        <div class="vote-bar-wrap">
-          <div class="vote-bar-label">
-            <span>${escHtml(p)}${isCorrect ? ' 👑' : ''}</span>
-            <span>${count} vote${count !== 1 ? 's' : ''} (${pct}%)</span>
-          </div>
-          <div class="vote-bar-outer">
-            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}" style="width:${pct}%"></div>
-          </div>
-        </div>`;
-    }).join('');
-
   el.innerHTML = `
     <div class="card" style="margin-bottom:14px">
       <p class="slide-counter">Round ${revealData.slideIndex + 1}</p>
@@ -806,11 +833,10 @@ function renderPlayerReveal(revealData) {
       <p class="dim" style="margin-bottom:14px">Lie: Statement ${revealData.lieIndex + 1}</p>
       ${bannerHTML}
     </div>
-    <div class="card" style="margin-bottom:14px">
+    <div class="card">
       <h3 style="margin-bottom:12px">The Statements</h3>
       ${stmts}
     </div>
-    ${nameBars ? `<div class="card"><h3 style="margin-bottom:12px">WHO guesses</h3>${nameBars}</div>` : ''}
   `;
 }
 
@@ -890,10 +916,6 @@ function updateAdminControls(phase) {
   const tally = document.getElementById('admin-vote-tally');
   const tallyTitle = document.getElementById('admin-vote-tally-title');
 
-  // QR code visible only in lobby
-  document.getElementById('admin-qr-section').style.display = phase === 'lobby' ? '' : 'none';
-  if (phase === 'lobby') renderQRCode();
-
   if (phase === 'voting') {
     // Spoiler D fix: only show total count during voting, no name breakdown
     tally.style.display = '';
@@ -934,20 +956,33 @@ async function fetchNameTally() {
     }).join('') || '<p class="dim">No votes</p>';
 }
 
-function renderQRCode() {
-  if (qrRendered) return;
+function showWelcome() {
+  showScreen('screen-admin-welcome');
+  renderWelcomeQR();
+}
+
+function renderWelcomeQR() {
+  if (welcomeQrRendered) return;
   const url = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
-  document.getElementById('admin-qr-url').textContent = url;
-  const el = document.getElementById('admin-qr-code');
+  document.getElementById('welcome-qr-url').textContent = url;
+  const el = document.getElementById('welcome-qr-code');
   try {
     const qr = qrcode(0, 'M');
     qr.addData(url);
     qr.make();
-    el.innerHTML = qr.createImgTag(4, 8);
-    qrRendered = true;
+    el.innerHTML = qr.createImgTag(8, 12);
+    const img = el.querySelector('img');
+    if (img) img.style.cssText = 'max-width:min(360px,80vmin);width:100%;height:auto';
+    welcomeQrRendered = true;
   } catch(e) {
     el.textContent = url;
   }
+}
+
+async function startGame() {
+  await adminOpenVoting();
+  showScreen('screen-admin');
+  renderAdminView();
 }
 
 function updateRevealControls() {
@@ -968,45 +1003,21 @@ function buildRevealCard(data) {
   div.className = 'card';
   div.style.marginBottom = '16px';
 
-  const nameBars = (gameData ? gameData.players : Object.keys(data.nameCounts))
-    .map(p => {
-      const count = data.nameCounts[p] || 0;
-      const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
-      const isCorrect = p === data.correctName;
-      return `
-        <div class="vote-bar-wrap">
-          <div class="vote-bar-label">
-            <span>${escHtml(p)}${isCorrect ? ' 👑' : ''}</span>
-            <span>${count} vote${count !== 1 ? 's' : ''} (${pct}%)</span>
-          </div>
-          <div class="vote-bar-outer">
-            <div class="vote-bar-inner ${isCorrect ? 'vote-bar-green' : 'vote-bar-dim'}" style="width:${pct}%"></div>
-          </div>
-        </div>`;
-    }).join('');
-
-  const lieStatements = [0,1,2].map(i => {
+  const stmts = [0,1,2].map(i => {
     const stmt = data.statements[i];
-    const count = data.lieIndexCounts[i] || 0;
-    const pct = data.totalVotes > 0 ? Math.round(count / data.totalVotes * 100) : 0;
-    const isCorrect = i === data.lieIndex;
+    const isLie = i === data.lieIndex;
     return `
-      <div class="vote-bar-wrap">
-        <div class="vote-bar-label">
-          <span>Stmt ${i+1}${isCorrect ? ' 🎯' : ''}: ${escHtml(stmt.length > 45 ? stmt.slice(0,45)+'…' : stmt)}</span>
-          <span>${count} (${pct}%)</span>
-        </div>
-        <div class="vote-bar-outer">
-          <div class="vote-bar-inner ${isCorrect ? 'vote-bar-accent' : 'vote-bar-dim'}" style="width:${pct}%"></div>
-        </div>
+      <div class="statement-card reveal-plain ${isLie ? 'is-lie' : 'is-truth'}">
+        <div class="statement-label">Statement ${i + 1} — ${isLie ? '🔴 LIE' : '✅ TRUTH'}</div>
+        <div class="statement-text">${escHtml(stmt)}</div>
       </div>`;
   }).join('');
 
   div.innerHTML = `
     <p class="slide-counter">Round ${data.slideIndex + 1}</p>
-    <h2 style="margin-bottom:4px">It was <span class="accent3">${escHtml(data.correctName)}</span>!</h2>
-    <p style="margin-bottom:16px"><strong class="accent">Lie: Statement ${data.lieIndex + 1}</strong></p>
-    <div class="reveal-stats">
+    <h2 style="margin-bottom:20px">It was <span class="accent3">${escHtml(data.correctName)}</span>!</h2>
+    ${stmts}
+    <div class="reveal-stats" style="margin-top:16px">
       <div class="stat-box">
         <div class="stat-num green">${data.whoCorrectCount}</div>
         <div class="stat-label">Got WHO right</div>
@@ -1016,10 +1027,6 @@ function buildRevealCard(data) {
         <div class="stat-label">Got LIE right</div>
       </div>
     </div>
-    <h3 style="margin-bottom:10px">WHO guesses</h3>
-    ${nameBars}
-    <h3 style="margin:14px 0 10px">LIE guesses</h3>
-    ${lieStatements}
   `;
   return div;
 }
@@ -1054,7 +1061,7 @@ async function adminReset() {
   lastSubmission = null;
   selectedName = null;
   selectedLie = null;
-  qrRendered = false;
+  welcomeQrRendered = false;
   const stateRes = await fetch('/api/state');
   gameState = await stateRes.json();
   renderAdminView();
