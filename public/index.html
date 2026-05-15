@@ -1036,7 +1036,7 @@ function updateAdminControls(phase) {
 
   if (phase === 'voting') {
     tally.style.display = '';
-    tallyTitle.innerHTML = `Votes in: <span id="admin-vote-count">${gameState.voteCount || 0}</span> / ${gameData ? gameData.players.length : gameState.totalSlides}`;
+    tallyTitle.innerHTML = `Votes in: <span id="admin-vote-count">${gameState.voteCount || 0}</span> / ${gameData ? gameData.players.length - 1 : gameState.totalSlides - 1}`;
     document.getElementById('admin-name-tally').innerHTML = '';
   } else if (phase === 'closed') {
     tally.style.display = '';
